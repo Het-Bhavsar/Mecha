@@ -1,0 +1,75 @@
+{
+  "manifestVersion": 2,
+  "id": "novelkeys_cream",
+  "name": "NovelKeys Cream",
+  "brand": "Community",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "space": {
+      "down": [
+        "space_0.wav",
+        "space_1.wav"
+      ],
+      "up": []
+    },
+    "enter": {
+      "down": [
+        "enter_0.wav"
+      ],
+      "up": []
+    },
+    "backspace": {
+      "down": [
+        "backspace_0.wav"
+      ],
+      "up": []
+    },
+    "modifier": {
+      "down": [
+        "modifier_0.wav",
+        "modifier_1.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric": {
+      "down": [
+        "alphanumeric_0.wav",
+        "alphanumeric_1.wav",
+        "alphanumeric_2.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 5,
+    "totalDownSamples": 9,
+    "totalUpSamples": 0,
+    "tier": "legacy"
+  },
+  "description": "Legacy bundled pack migrated from manifest v1 for NovelKeys Cream",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-v1",
+    "source": "bundled-v1",
+    "notes": "Auto-migrated from the original Mecha manifest v1 schema."
+  }
+}

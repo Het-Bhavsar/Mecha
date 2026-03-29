@@ -1,0 +1,151 @@
+.typingcontainer {
+  display: inline-block;
+  text-align: left;
+  border: 3px solid;
+  margin-bottom: 24px;
+  width: 832px;
+  max-width: 80vw;
+  transition: background 0.2s linear, border-color 0.2s linear;
+}
+
+.wordcontainer {
+  padding: 1rem;
+  max-width: 800px;
+}
+
+.wordarea {
+  height: 6rem;
+  overflow: hidden;
+}
+
+.words {
+  position: relative;
+}
+
+.resultarea {
+  /* display: inline-block; */
+  height: 6rem;
+  opacity: 1;
+  animation-name: fadeInOpacity;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-in;
+  animation-duration: 0.2s;
+}
+
+@keyframes fadeInOpacity {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.results {
+  display: flex;
+  justify-content: space-evenly;
+  height: 100%;
+}
+
+.resultcol {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wpm {
+  font-size: 32px;
+}
+
+.keystrokes {
+  font-size: 16px;
+}
+
+.correctresult {
+  color: #3ab049;
+}
+
+.incorrectresult {
+  color: #e06c75;
+}
+
+.resultcol.accuracycol {
+  background: #eee;
+}
+
+.inputbar {
+  padding: 1rem;
+  padding-top: 0.1rem;
+  /* background: #eee; */
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.inputbar > input {
+  font-size: 16px;
+  transition: border 0.2s linear, background 0.2s linear;
+  outline: none;
+  padding: 10px;
+  flex-grow: 1;
+}
+
+.inputbar.light > input {
+  border: 2px solid #9e9e9e;
+}
+
+.inputbar.light > input:focus {
+  border: 2px solid #212121;
+}
+
+.inputbar.dark > input {
+  border: 2px solid #616161;
+}
+
+.inputbar.dark > input:focus {
+  border: 2px solid #ffffff;
+}
+
+.toolbar {
+  display: flex;
+}
+
+.time {
+  padding: 10px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  transition: background 0.2s linear, color 0.2s linear;
+}
+
+.typinginput {
+  font-size: 32px;
+  border: none;
+  padding: 10px;
+  flex-grow: 1;
+}
+
+.redo {
+  transition: border 0.2s linear, background 0.2s linear, color 0.2s linear;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.redo.light {
+  border: 2px solid #9e9e9e;
+}
+
+.redo.light:focus {
+  border: 2px solid #212121;
+}
+
+.redo.dark {
+  border: 2px solid #616161;
+}
+
+.redo.dark:focus {
+  border: 2px solid #ffffff;
+}

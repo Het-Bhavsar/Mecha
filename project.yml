@@ -1,0 +1,35 @@
+name: Mecha
+options:
+  bundleIdPrefix: com.yourcompany
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+
+targets:
+  Mecha:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Mecha
+        excludes:
+          - "Resources/SoundPacks/**/*.wav"
+          - "Resources/SoundPacks/**/*.json"
+      - path: Mecha/Resources/SoundPacks
+        type: folder
+        buildPhase: resources
+    settings:
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "Mac Developer"
+      PRODUCT_BUNDLE_IDENTIFIER: com.yourcompany.Mecha
+      SWIFT_VERSION: 5.9
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      GENERATE_INFOPLIST_FILE: YES
+      CURRENT_PROJECT_VERSION: 18
+      MARKETING_VERSION: 3.0.17
+      INFOPLIST_KEY_LSUIElement: YES # Runs in background (menu bar only)
+      INFOPLIST_KEY_NSAppleEventsUsageDescription: "Mecha requires accessibility permissions to detect keypresses system-wide."
+      # If you build for distribution, you need com.apple.security.app-sandbox
+      # But due to CGEventTap, App Sandbox MUST be disabled for the accessibility API to work globally.
+    dependencies: []
+

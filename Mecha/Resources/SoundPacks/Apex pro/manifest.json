@@ -1,0 +1,61 @@
+{
+  "manifestVersion": 2,
+  "id": "apex_pro",
+  "name": "Apex pro",
+  "brand": "Upstream",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "arrow": {
+      "down": [
+        "down/arrow/left.wav",
+        "down/arrow/right.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric": {
+      "down": [
+        "down/alphanumeric/numpad.wav",
+        "down/alphanumeric/wasd.wav"
+      ],
+      "up": []
+    },
+    "space": {
+      "down": [
+        "down/space/space.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 3,
+    "totalDownSamples": 5,
+    "totalUpSamples": 0,
+    "tier": "mapped"
+  },
+  "description": "Imported upstream per-key pack from soundpacks.zip and grouped into keyboard zones.",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-mapped",
+    "source": "soundpacks.zip",
+    "notes": "Imported from upstream per-key WAVs and heuristically grouped into keyboard zones."
+  }
+}

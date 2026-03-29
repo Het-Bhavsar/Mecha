@@ -1,0 +1,83 @@
+{
+  "manifestVersion": 2,
+  "id": "cherry_mx_blue",
+  "name": "Cherry MX Blue",
+  "brand": "Community",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "space": {
+      "down": [
+        "space_0.wav"
+      ],
+      "up": []
+    },
+    "enter": {
+      "down": [
+        "enter_0.wav"
+      ],
+      "up": []
+    },
+    "backspace": {
+      "down": [
+        "backspace_0.wav"
+      ],
+      "up": []
+    },
+    "modifier": {
+      "down": [
+        "modifier_0.wav",
+        "modifier_1.wav",
+        "modifier_2.wav"
+      ],
+      "up": []
+    },
+    "arrow": {
+      "down": [
+        "arrow_0.wav",
+        "arrow_1.wav",
+        "arrow_2.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric": {
+      "down": [
+        "alphanumeric_0.wav",
+        "alphanumeric_1.wav",
+        "alphanumeric_2.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 6,
+    "totalDownSamples": 12,
+    "totalUpSamples": 0,
+    "tier": "legacy"
+  },
+  "description": "Legacy bundled pack migrated from manifest v1 for Cherry MX Blue",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-v1",
+    "source": "bundled-v1",
+    "notes": "Auto-migrated from the original Mecha manifest v1 schema."
+  }
+}

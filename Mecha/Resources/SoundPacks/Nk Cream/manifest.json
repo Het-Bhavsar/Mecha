@@ -1,0 +1,120 @@
+{
+  "manifestVersion": 2,
+  "id": "nk_cream",
+  "name": "Nk Cream",
+  "brand": "Upstream",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "punctuation": {
+      "down": [
+        "down/punctuation/[.wav",
+        "down/punctuation/].wav"
+      ],
+      "up": []
+    },
+    "alphanumeric_left": {
+      "down": [
+        "down/alphanumeric_left/a.wav",
+        "down/alphanumeric_left/b.wav",
+        "down/alphanumeric_left/c.wav",
+        "down/alphanumeric_left/d.wav",
+        "down/alphanumeric_left/e.wav",
+        "down/alphanumeric_left/f.wav",
+        "down/alphanumeric_left/g.wav",
+        "down/alphanumeric_left/q.wav",
+        "down/alphanumeric_left/r.wav",
+        "down/alphanumeric_left/s.wav",
+        "down/alphanumeric_left/t.wav",
+        "down/alphanumeric_left/v.wav",
+        "down/alphanumeric_left/w.wav",
+        "down/alphanumeric_left/x.wav",
+        "down/alphanumeric_left/z.wav"
+      ],
+      "up": []
+    },
+    "backspace": {
+      "down": [
+        "down/backspace/backspace.wav"
+      ],
+      "up": []
+    },
+    "caps_lock": {
+      "down": [
+        "down/caps_lock/caps lock.wav"
+      ],
+      "up": []
+    },
+    "enter": {
+      "down": [
+        "down/enter/enter.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric_right": {
+      "down": [
+        "down/alphanumeric_right/h.wav",
+        "down/alphanumeric_right/i.wav",
+        "down/alphanumeric_right/j.wav",
+        "down/alphanumeric_right/k.wav",
+        "down/alphanumeric_right/l.wav",
+        "down/alphanumeric_right/m.wav",
+        "down/alphanumeric_right/n.wav",
+        "down/alphanumeric_right/o.wav",
+        "down/alphanumeric_right/p.wav",
+        "down/alphanumeric_right/u.wav",
+        "down/alphanumeric_right/y.wav"
+      ],
+      "up": []
+    },
+    "modifier_left": {
+      "down": [
+        "down/modifier_left/shift.wav"
+      ],
+      "up": []
+    },
+    "space": {
+      "down": [
+        "down/space/space.wav"
+      ],
+      "up": []
+    },
+    "tab": {
+      "down": [
+        "down/tab/tab.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 9,
+    "totalDownSamples": 34,
+    "totalUpSamples": 0,
+    "tier": "mapped"
+  },
+  "description": "Imported upstream per-key pack from soundpacks.zip and grouped into keyboard zones.",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-mapped",
+    "source": "soundpacks.zip",
+    "notes": "Imported from upstream per-key WAVs and heuristically grouped into keyboard zones."
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "manifestVersion": 2,
+  "id": "razer_green_blackwidow_elite_akira",
+  "name": "Razer green (blackwidow elite)   akira",
+  "brand": "Upstream",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "alphanumeric": {
+      "down": [
+        "down/alphanumeric/Full recording.wav",
+        "down/alphanumeric/back.wav",
+        "down/alphanumeric/ent.wav",
+        "down/alphanumeric/key1.wav",
+        "down/alphanumeric/key2.wav",
+        "down/alphanumeric/key3.wav",
+        "down/alphanumeric/key4.wav",
+        "down/alphanumeric/key5.wav",
+        "down/alphanumeric/key6.wav",
+        "down/alphanumeric/nO.wav",
+        "down/alphanumeric/space1.wav",
+        "down/alphanumeric/space2.wav"
+      ],
+      "up": []
+    },
+    "modifier_left": {
+      "down": [
+        "down/modifier_left/alt.wav",
+        "down/modifier_left/ctrl.wav",
+        "down/modifier_left/shift.wav"
+      ],
+      "up": []
+    },
+    "caps_lock": {
+      "down": [
+        "down/caps_lock/caps.wav"
+      ],
+      "up": []
+    },
+    "modifier_right": {
+      "down": [
+        "down/modifier_right/rshift.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 4,
+    "totalDownSamples": 17,
+    "totalUpSamples": 0,
+    "tier": "mapped"
+  },
+  "description": "Imported upstream per-key pack from soundpacks.zip and grouped into keyboard zones.",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-mapped",
+    "source": "soundpacks.zip",
+    "notes": "Imported from upstream per-key WAVs and heuristically grouped into keyboard zones."
+  }
+}

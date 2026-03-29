@@ -1,0 +1,52 @@
+{
+  "manifestVersion": 2,
+  "id": "banana_split_stock",
+  "name": "Banana split stock",
+  "brand": "Upstream",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "alphanumeric": {
+      "down": [
+        "down/alphanumeric/banana-s-1.wav",
+        "down/alphanumeric/banana-s-2.wav",
+        "down/alphanumeric/banana-s-3.wav",
+        "down/alphanumeric/banana-s-4.wav",
+        "down/alphanumeric/banana-s-5.wav",
+        "down/alphanumeric/banana-s-6.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 1,
+    "totalDownSamples": 6,
+    "totalUpSamples": 0,
+    "tier": "mapped"
+  },
+  "description": "Imported upstream per-key pack from soundpacks.zip and grouped into keyboard zones.",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-mapped",
+    "source": "soundpacks.zip",
+    "notes": "Imported from upstream per-key WAVs and heuristically grouped into keyboard zones."
+  }
+}

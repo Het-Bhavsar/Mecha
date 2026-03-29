@@ -1,0 +1,76 @@
+{
+  "manifestVersion": 2,
+  "id": "holy_pandas",
+  "name": "Holy Pandas",
+  "brand": "Community",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "space": {
+      "down": [
+        "space_0.wav",
+        "space_1.wav"
+      ],
+      "up": [
+        "space_up.wav"
+      ]
+    },
+    "enter": {
+      "down": [
+        "enter_0.wav"
+      ],
+      "up": [
+        "enter_up.wav"
+      ]
+    },
+    "backspace": {
+      "down": [
+        "backspace_0.wav"
+      ],
+      "up": [
+        "backspace_up.wav"
+      ]
+    },
+    "alphanumeric": {
+      "down": [
+        "alphanumeric_0.wav",
+        "alphanumeric_1.wav",
+        "alphanumeric_2.wav"
+      ],
+      "up": [
+        "alphanumeric_up.wav"
+      ]
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": true,
+    "groupCount": 4,
+    "totalDownSamples": 7,
+    "totalUpSamples": 4,
+    "tier": "legacy"
+  },
+  "description": "Legacy bundled pack migrated from manifest v1 for Holy Pandas",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-v1",
+    "source": "bundled-v1",
+    "notes": "Auto-migrated from the original Mecha manifest v1 schema."
+  }
+}

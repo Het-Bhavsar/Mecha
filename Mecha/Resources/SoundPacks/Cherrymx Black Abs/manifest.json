@@ -1,0 +1,241 @@
+{
+  "manifestVersion": 2,
+  "id": "cherrymx_black_abs",
+  "name": "Cherrymx Black Abs",
+  "brand": "Upstream",
+  "switchType": "Mechanical",
+  "audio": {
+    "sampleRate": 48000,
+    "bitDepth": 24,
+    "channels": 1
+  },
+  "groups": {
+    "escape": {
+      "down": [
+        "down/escape/1.wav"
+      ],
+      "up": []
+    },
+    "number_row": {
+      "down": [
+        "down/number_row/10.wav",
+        "down/number_row/11.wav",
+        "down/number_row/12.wav",
+        "down/number_row/13.wav",
+        "down/number_row/2.wav",
+        "down/number_row/3.wav",
+        "down/number_row/4.wav",
+        "down/number_row/41.wav",
+        "down/number_row/5.wav",
+        "down/number_row/6.wav",
+        "down/number_row/7.wav",
+        "down/number_row/8.wav",
+        "down/number_row/9.wav"
+      ],
+      "up": []
+    },
+    "backspace": {
+      "down": [
+        "down/backspace/14.wav"
+      ],
+      "up": []
+    },
+    "tab": {
+      "down": [
+        "down/tab/15.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric_left": {
+      "down": [
+        "down/alphanumeric_left/16.wav",
+        "down/alphanumeric_left/17.wav",
+        "down/alphanumeric_left/18.wav",
+        "down/alphanumeric_left/19.wav",
+        "down/alphanumeric_left/20.wav",
+        "down/alphanumeric_left/30.wav",
+        "down/alphanumeric_left/31.wav",
+        "down/alphanumeric_left/32.wav",
+        "down/alphanumeric_left/33.wav",
+        "down/alphanumeric_left/34.wav",
+        "down/alphanumeric_left/44.wav",
+        "down/alphanumeric_left/45.wav",
+        "down/alphanumeric_left/46.wav",
+        "down/alphanumeric_left/47.wav",
+        "down/alphanumeric_left/48.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric_right": {
+      "down": [
+        "down/alphanumeric_right/21.wav",
+        "down/alphanumeric_right/22.wav",
+        "down/alphanumeric_right/23.wav",
+        "down/alphanumeric_right/24.wav",
+        "down/alphanumeric_right/25.wav",
+        "down/alphanumeric_right/35.wav",
+        "down/alphanumeric_right/36.wav",
+        "down/alphanumeric_right/37.wav",
+        "down/alphanumeric_right/38.wav",
+        "down/alphanumeric_right/49.wav",
+        "down/alphanumeric_right/50.wav"
+      ],
+      "up": []
+    },
+    "punctuation": {
+      "down": [
+        "down/punctuation/26.wav",
+        "down/punctuation/27.wav",
+        "down/punctuation/39.wav",
+        "down/punctuation/40.wav",
+        "down/punctuation/43.wav",
+        "down/punctuation/51.wav",
+        "down/punctuation/52.wav",
+        "down/punctuation/53.wav"
+      ],
+      "up": []
+    },
+    "enter": {
+      "down": [
+        "down/enter/28.wav"
+      ],
+      "up": []
+    },
+    "modifier_left": {
+      "down": [
+        "down/modifier_left/29.wav",
+        "down/modifier_left/42.wav",
+        "down/modifier_left/56.wav"
+      ],
+      "up": []
+    },
+    "numpad": {
+      "down": [
+        "down/numpad/3612.wav",
+        "down/numpad/3613.wav",
+        "down/numpad/3637.wav",
+        "down/numpad/3639.wav",
+        "down/numpad/3640.wav",
+        "down/numpad/3653.wav",
+        "down/numpad/3655.wav",
+        "down/numpad/3657.wav",
+        "down/numpad/3663.wav",
+        "down/numpad/3665.wav",
+        "down/numpad/3666.wav",
+        "down/numpad/3667.wav",
+        "down/numpad/3675.wav",
+        "down/numpad/3676.wav",
+        "down/numpad/3677.wav",
+        "down/numpad/55.wav",
+        "down/numpad/61011.wav",
+        "down/numpad/69.wav",
+        "down/numpad/71.wav",
+        "down/numpad/72.wav",
+        "down/numpad/73.wav",
+        "down/numpad/74.wav",
+        "down/numpad/75.wav",
+        "down/numpad/76.wav",
+        "down/numpad/77.wav",
+        "down/numpad/78.wav",
+        "down/numpad/79.wav",
+        "down/numpad/80.wav",
+        "down/numpad/81.wav",
+        "down/numpad/82.wav",
+        "down/numpad/83.wav"
+      ],
+      "up": []
+    },
+    "modifier_right": {
+      "down": [
+        "down/modifier_right/54.wav"
+      ],
+      "up": []
+    },
+    "space": {
+      "down": [
+        "down/space/57.wav"
+      ],
+      "up": []
+    },
+    "arrow": {
+      "down": [
+        "down/arrow/57416.wav",
+        "down/arrow/57419.wav",
+        "down/arrow/57421.wav",
+        "down/arrow/57424.wav"
+      ],
+      "up": []
+    },
+    "caps_lock": {
+      "down": [
+        "down/caps_lock/58.wav"
+      ],
+      "up": []
+    },
+    "function": {
+      "down": [
+        "down/function/59.wav",
+        "down/function/60.wav",
+        "down/function/61.wav",
+        "down/function/61008.wav",
+        "down/function/61009.wav",
+        "down/function/61010.wav",
+        "down/function/62.wav",
+        "down/function/63.wav",
+        "down/function/64.wav",
+        "down/function/65.wav",
+        "down/function/66.wav",
+        "down/function/67.wav",
+        "down/function/68.wav",
+        "down/function/70.wav",
+        "down/function/87.wav",
+        "down/function/88.wav"
+      ],
+      "up": []
+    },
+    "navigation": {
+      "down": [
+        "down/navigation/60999.wav",
+        "down/navigation/61000.wav",
+        "down/navigation/61001.wav",
+        "down/navigation/61003.wav",
+        "down/navigation/61005.wav",
+        "down/navigation/61007.wav"
+      ],
+      "up": []
+    },
+    "alphanumeric": {
+      "down": [
+        "down/alphanumeric/sound.wav"
+      ],
+      "up": []
+    }
+  },
+  "fallbacks": {
+    "space": "alphanumeric",
+    "enter": "alphanumeric",
+    "backspace": "alphanumeric",
+    "modifier": "alphanumeric",
+    "arrow": "alphanumeric",
+    "tab": "modifier",
+    "escape": "modifier"
+  },
+  "coverage": {
+    "hasKeyUp": false,
+    "groupCount": 17,
+    "totalDownSamples": 115,
+    "totalUpSamples": 0,
+    "tier": "mapped"
+  },
+  "description": "Imported upstream per-key pack from soundpacks.zip and grouped into keyboard zones.",
+  "rendering": {
+    "defaultGainDb": 0.0,
+    "stereoWidth": 0.12,
+    "pitchJitterCents": 3.0
+  },
+  "compatibility": {
+    "mode": "legacy-mapped",
+    "source": "soundpacks.zip",
+    "notes": "Imported from upstream per-key WAVs and heuristically grouped into keyboard zones."
+  }
+}

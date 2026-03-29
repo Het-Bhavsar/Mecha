@@ -1,0 +1,34 @@
+.footerContainer {
+  min-height: 3vh;
+  padding-bottom: 1vh;
+  display: flex;
+  text-align: center;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  font-family: roboto;
+  transition: background 0.2s linear;
+}
+
+.link {
+  text-decoration: none;
+  padding-left: 16px;
+  padding-right: 16px;
+  transition: color 0.2s linear;
+}
+
+.link.light {
+  color: #444;
+}
+
+.link.dark {
+  color: #bbb;
+}
+
+.link.light:hover {
+  color: #000;
+}
+
+.link.dark:hover {
+  color: #fff;
+}
