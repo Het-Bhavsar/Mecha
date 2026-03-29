@@ -40,8 +40,11 @@ struct AudioEnginePreferenceTests {
             let delay = AudioEngineManager.schedulingDelaySeconds(timingJitterMs: 12)
             expect(delay >= 0 && delay <= 0.0121, "Timing jitter should stay within the manifest budget")
         }
-        expect(AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 0) < 1.0, "Default release samples should blend below downstroke gain")
-        expect(AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 1.0) == 1.0, "Maximum release blend should preserve full release gain")
+        expect(AudioEngineManager.basePlaybackVolume(isRepeat: false, isKeyUp: false) == 0.25, "Downstrokes should keep the primary attack gain")
+        expect(AudioEngineManager.basePlaybackVolume(isRepeat: false, isKeyUp: true) < AudioEngineManager.basePlaybackVolume(isRepeat: false, isKeyUp: false), "Key-up playback should be softer than key-down")
+        expect(AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 0, isFallback: false) < 1.0, "Default release samples should blend below downstroke gain")
+        expect(AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 1.0, isFallback: false) == 1.0, "Maximum release blend should preserve full release gain")
+        expect(AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 0.4, isFallback: true) < AudioEngineManager.releaseSampleGainMultiplier(releaseBlend: 0.4, isFallback: false), "Fallback release playback should be lighter than native release samples")
         let fallbackFormat = AudioEngineManager.normalizedPlaybackFormatValues(sampleRate: 0, channelCount: 0)
         expect(fallbackFormat.sampleRate == 44100 && fallbackFormat.channelCount == 2, "Invalid hardware formats should fall back to 44.1kHz stereo")
         let preservedFormat = AudioEngineManager.normalizedPlaybackFormatValues(sampleRate: 48000, channelCount: 2)

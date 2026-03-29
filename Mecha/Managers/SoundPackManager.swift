@@ -836,6 +836,13 @@ class SoundPackManager: ObservableObject {
         return SelectedSoundSample(sampleGroup: "generic-up", playbackGroup: keyType, url: genericKeyUpURL)
     }
 
+    static func resolvedKeyUpSample(
+        nativeRelease: SelectedSoundSample?,
+        fallbackPress: SelectedSoundSample?
+    ) -> SelectedSoundSample? {
+        nativeRelease ?? fallbackPress
+    }
+
     /// Returns all sound URLs for the current pack (for pre-buffering)
     func allSoundURLs() -> [URL] {
         var urls: [URL] = []

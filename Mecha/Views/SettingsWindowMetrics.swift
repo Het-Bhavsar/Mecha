@@ -5,11 +5,6 @@ struct SettingsWindowMetrics {
     static let titleBarHeightRange: ClosedRange<CGFloat> = 28...32
     static let titleBarHeightFallback: CGFloat = 30
 
-    static let trafficLightLeadingPadding: CGFloat = 16
-    static let trafficLightTopPadding: CGFloat = 12
-    static let trafficLightClusterWidth: CGFloat = 56
-    static let trafficLightClearance: CGFloat = 24
-
     static let sidebarWidth: CGFloat = 256
     static let contentPadding: CGFloat = 32
     static let columnPadding: CGFloat = 24
@@ -31,7 +26,7 @@ struct SettingsWindowMetrics {
     }
 
     var sidebarHeaderLeadingInset: CGFloat {
-        Self.trafficLightLeadingPadding + Self.trafficLightClusterWidth + Self.trafficLightClearance
+        Self.columnPadding
     }
 
     var chromeVerticalPadding: CGFloat {

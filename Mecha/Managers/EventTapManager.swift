@@ -5,8 +5,8 @@ class EventTapManager: ObservableObject {
     @Published var isTrusted: Bool = AXIsProcessTrusted()
     
     // Callbacks to send the event to the Audio Engine
-    var onKeyDown: ((String, Bool, TimeInterval) -> Void)?
-    var onKeyUp: ((String, Bool) -> Void)?
+    var onKeyDown: ((Int64, String, Bool, TimeInterval) -> Void)?
+    var onKeyUp: ((Int64, String) -> Void)?
     
     // Used to track long-press keys so we don't spam audio
     private var activeKeys: Set<Int64> = []
@@ -82,7 +82,7 @@ class EventTapManager: ObservableObject {
         guard let port = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .defaultTap,
+            options: .listenOnly,
             eventsOfInterest: CGEventMask(eventMask),
             callback: customEventTapCallback,
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -122,22 +122,22 @@ class EventTapManager: ObservableObject {
             activeKeys.insert(keyCode)
             
             let typeString = mapKeyCode(Int(keyCode))
-            self.onKeyDown?(typeString, isRepeat, holdDuration)
+            self.onKeyDown?(keyCode, typeString, isRepeat, holdDuration)
             
         case .keyUp:
             activeKeys.remove(keyCode)
             firstPressTimes.removeValue(forKey: keyCode)
             let typeString = mapKeyCode(Int(keyCode))
-            self.onKeyUp?(typeString, false)
+            self.onKeyUp?(keyCode, typeString)
         case .flagsChanged:
             if !activeKeys.contains(keyCode) {
                 activeKeys.insert(keyCode)
                 let typeString = mapKeyCode(Int(keyCode))
-                self.onKeyDown?(typeString, false, 0)
+                self.onKeyDown?(keyCode, typeString, false, 0)
             } else {
                 activeKeys.remove(keyCode)
                 let typeString = mapKeyCode(Int(keyCode))
-                self.onKeyUp?(typeString, false)
+                self.onKeyUp?(keyCode, typeString)
             }
         default:
             break

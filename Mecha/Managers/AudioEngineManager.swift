@@ -1,5 +1,53 @@
 @preconcurrency import AVFoundation
 
+enum PerformanceMode: String, CaseIterable, Identifiable {
+    case powerSavings = "power_savings"
+    case balanced = "balanced"
+    case zeroLatency = "zero_latency"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .powerSavings:
+            return "Power Savings"
+        case .balanced:
+            return "Balanced"
+        case .zeroLatency:
+            return "Zero Latency"
+        }
+    }
+
+    var detailText: String {
+        switch self {
+        case .powerSavings:
+            return "Lowest idle battery draw with a short wake-up when typing resumes."
+        case .balanced:
+            return "Keeps Mecha responsive while letting the engine cool down after inactivity."
+        case .zeroLatency:
+            return "Keeps the engine primed for the fastest possible first keystroke."
+        }
+    }
+
+    var indicatorHeights: [CGFloat] {
+        switch self {
+        case .powerSavings:
+            return [4, 6, 5, 4]
+        case .balanced:
+            return [6, 9, 11, 8]
+        case .zeroLatency:
+            return [8, 12, 14, 10]
+        }
+    }
+}
+
+struct PerformanceModeConfiguration: Equatable {
+    let activePlayerCount: Int
+    let idleTimeout: TimeInterval?
+    let keepsEnginePrimed: Bool
+    let statsFlushInterval: TimeInterval
+}
+
 struct PlaybackFormatValues: Sendable {
     let sampleRate: Double
     let channelCount: AVAudioChannelCount
@@ -8,6 +56,7 @@ struct PlaybackFormatValues: Sendable {
 class AudioEngineManager: ObservableObject {
     static let masterVolumeKey = "MasterVolume"
     static let isMutedKey = "IsMuted"
+    static let performanceModeKey = "PerformanceMode"
 
     private let engine = AVAudioEngine()
     private let mixer: AVAudioMixerNode
@@ -18,6 +67,9 @@ class AudioEngineManager: ObservableObject {
     private var currentNodeIndex = 0
     private let poolSize = 32 // Support 32 simultaneous notes with unique pitch
     private let lock = NSLock()
+    private var activePlayerLimit = 20
+    private var idleTimeout: TimeInterval?
+    private var idleShutdownTimer: Timer?
     private var packDefaultGainDb: Float = 0
     private var packStereoWidth: Float = 0.12
     private var packPitchJitterCents: Float = 0
@@ -37,6 +89,13 @@ class AudioEngineManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(isMuted, forKey: Self.isMutedKey)
             mixer.volume = Self.effectiveMixerVolume(masterVolume: masterVolume, isMuted: isMuted)
+        }
+    }
+
+    @Published var performanceMode: PerformanceMode = .balanced {
+        didSet {
+            UserDefaults.standard.set(performanceMode.rawValue, forKey: Self.performanceModeKey)
+            applyPerformanceMode()
         }
     }
     
@@ -77,12 +136,61 @@ class AudioEngineManager: ObservableObject {
         (defaults.object(forKey: isMutedKey) as? Bool) ?? false
     }
 
+    static func resolvedPerformanceMode(from defaults: UserDefaults = .standard) -> PerformanceMode {
+        guard
+            let rawValue = defaults.string(forKey: performanceModeKey),
+            let resolvedMode = PerformanceMode(rawValue: rawValue)
+        else {
+            return .balanced
+        }
+
+        return resolvedMode
+    }
+
+    static func configuration(for mode: PerformanceMode) -> PerformanceModeConfiguration {
+        switch mode {
+        case .powerSavings:
+            return PerformanceModeConfiguration(
+                activePlayerCount: 10,
+                idleTimeout: 1.5,
+                keepsEnginePrimed: false,
+                statsFlushInterval: 8
+            )
+        case .balanced:
+            return PerformanceModeConfiguration(
+                activePlayerCount: 20,
+                idleTimeout: 8,
+                keepsEnginePrimed: false,
+                statsFlushInterval: 4
+            )
+        case .zeroLatency:
+            return PerformanceModeConfiguration(
+                activePlayerCount: 32,
+                idleTimeout: nil,
+                keepsEnginePrimed: true,
+                statsFlushInterval: 2
+            )
+        }
+    }
+
     static func effectiveMixerVolume(masterVolume: Float, isMuted: Bool) -> Float {
         guard !isMuted else {
             return 0
         }
 
         return (masterVolume * 10).rounded() / 10
+    }
+
+    static func basePlaybackVolume(isRepeat: Bool, isKeyUp: Bool) -> Float {
+        if isRepeat {
+            return 0.08
+        }
+
+        if isKeyUp {
+            return 0.18
+        }
+
+        return 0.25
     }
 
     static func effectivePlaybackVolume(
@@ -146,6 +254,11 @@ class AudioEngineManager: ObservableObject {
         return 0.55 + (0.45 * clampedBlend)
     }
 
+    static func releaseSampleGainMultiplier(releaseBlend: Float, isFallback: Bool) -> Float {
+        let nativeReleaseGain = releaseSampleGainMultiplier(releaseBlend: releaseBlend)
+        return isFallback ? nativeReleaseGain * 0.65 : nativeReleaseGain
+    }
+
     static func normalizedPlaybackFormatValues(sampleRate: Double, channelCount: AVAudioChannelCount) -> PlaybackFormatValues {
         let resolvedSampleRate = sampleRate > 0 ? sampleRate : 44100
         let resolvedChannelCount = channelCount > 0 ? channelCount : 2
@@ -175,6 +288,7 @@ class AudioEngineManager: ObservableObject {
         // Restore settings: Default to 0.8 but round to 1 decimal to match "staircase" steps
         self.masterVolume = Self.resolvedMasterVolume()
         self.isMuted = Self.resolvedMuteState()
+        self.performanceMode = Self.resolvedPerformanceMode()
         self.mixer.volume = Self.effectiveMixerVolume(masterVolume: masterVolume, isMuted: isMuted)
         
         // Restore Mechanical Tuning
@@ -189,6 +303,7 @@ class AudioEngineManager: ObservableObject {
         self.volumeAlpha = UserDefaults.standard.object(forKey: "VolumeAlpha") as? Float ?? 1.0
         
         setupEngine()
+        applyPerformanceMode()
     }
     
     private lazy var playbackFormat: AVAudioFormat = resolvePlaybackFormat()
@@ -224,6 +339,64 @@ class AudioEngineManager: ObservableObject {
 
         if wasRunning {
             try? engine.start()
+        }
+    }
+
+    private func applyPerformanceMode() {
+        let configuration = Self.configuration(for: performanceMode)
+        activePlayerLimit = max(1, min(playerNodes.count, configuration.activePlayerCount))
+        idleTimeout = configuration.idleTimeout
+
+        if configuration.keepsEnginePrimed {
+            cancelIdleShutdown()
+            ensureEngineRunning()
+        } else {
+            scheduleIdleShutdownIfNeeded()
+        }
+    }
+
+    private func ensureEngineRunning() {
+        reconfigurePlaybackFormatIfNeeded()
+        guard !engine.isRunning else { return }
+        try? engine.start()
+    }
+
+    private func cancelIdleShutdown() {
+        idleShutdownTimer?.invalidate()
+        idleShutdownTimer = nil
+    }
+
+    private func hasActivePlayback() -> Bool {
+        playerNodes.contains(where: \.isPlaying)
+    }
+
+    private func scheduleIdleShutdownIfNeeded() {
+        cancelIdleShutdown()
+
+        let configuration = Self.configuration(for: performanceMode)
+        guard !configuration.keepsEnginePrimed, let timeout = configuration.idleTimeout else {
+            return
+        }
+
+        idleShutdownTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
+            self?.suspendEngineIfIdle()
+        }
+        idleShutdownTimer?.tolerance = min(1.0, timeout * 0.35)
+    }
+
+    private func suspendEngineIfIdle() {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let configuration = Self.configuration(for: performanceMode)
+        guard !configuration.keepsEnginePrimed else { return }
+        guard !hasActivePlayback() else {
+            scheduleIdleShutdownIfNeeded()
+            return
+        }
+
+        if engine.isRunning {
+            engine.pause()
         }
     }
     
@@ -319,9 +492,10 @@ class AudioEngineManager: ObservableObject {
                 // The engine stays active and just swaps the buffers atomically.
                 self.soundBuffers = loadedBuffers
                 
-                // Ensure engine is running (first-time boot)
-                if !self.engine.isRunning {
-                    try? self.engine.start()
+                if Self.configuration(for: self.performanceMode).keepsEnginePrimed {
+                    self.ensureEngineRunning()
+                } else if self.engine.isRunning {
+                    self.scheduleIdleShutdownIfNeeded()
                 }
                 
                 print("[AudioEngineManager] v3.0.0 Master Engine Sync Complete (0ms Swap)")
@@ -336,7 +510,8 @@ class AudioEngineManager: ObservableObject {
         keyGroup: String? = nil,
         isRepeat: Bool = false,
         holdDuration: TimeInterval = 0,
-        isKeyUp: Bool = false
+        isKeyUp: Bool = false,
+        isFallbackRelease: Bool = false
     ) {
         // Fast-path: Skip all logic if muted
         if isMuted { return }
@@ -360,9 +535,11 @@ class AudioEngineManager: ObservableObject {
         guard let buffer = soundBuffers[url], !playerNodes.isEmpty else {
             return
         }
+
+        ensureEngineRunning()
         
         // Defensive indexing to prevent crashing if pool size ever changes
-        let safeIndex = currentNodeIndex % playerNodes.count
+        let safeIndex = currentNodeIndex % max(1, activePlayerLimit)
         let node = playerNodes[safeIndex]
         let pitch = pitchNodes[safeIndex]
         
@@ -398,7 +575,7 @@ class AudioEngineManager: ObservableObject {
         }
         
         // 3. Volume Headroom + Jitter
-        let baseVolume: Float = isRepeat ? 0.08 : 0.25
+        let baseVolume = Self.basePlaybackVolume(isRepeat: isRepeat, isKeyUp: isKeyUp)
         let volRange = (1.0 - volumeJitterRange)...(1.0 + volumeJitterRange)
         let jitter = Float.random(in: volRange)
         node.volume = Self.effectivePlaybackVolume(
@@ -408,7 +585,7 @@ class AudioEngineManager: ObservableObject {
             masterVolume: masterVolume,
             isMuted: isMuted
         ) * Self.packGainMultiplier(defaultGainDb: packDefaultGainDb)
-          * (isKeyUp ? Self.releaseSampleGainMultiplier(releaseBlend: packReleaseBlend) : 1)
+          * (isKeyUp ? Self.releaseSampleGainMultiplier(releaseBlend: packReleaseBlend, isFallback: isFallbackRelease) : 1)
         node.pan = Self.stereoPanPosition(for: resolvedKeyGroup, stereoWidth: packStereoWidth)
 
         let jitterDelay = isRepeat ? 0 : Self.schedulingDelaySeconds(timingJitterMs: packTimingJitterMs)
@@ -422,8 +599,9 @@ class AudioEngineManager: ObservableObject {
 
         node.scheduleBuffer(buffer, at: scheduledTime) { }
         node.play()
+        scheduleIdleShutdownIfNeeded()
         
         // Round robin
-        currentNodeIndex = (safeIndex + 1) % playerNodes.count
+        currentNodeIndex = (safeIndex + 1) % max(1, activePlayerLimit)
     }
 }

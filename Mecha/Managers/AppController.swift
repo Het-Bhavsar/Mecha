@@ -10,6 +10,7 @@ class AppController: ObservableObject {
     private let statsManager: StatsManager
     
     private var cancellables = Set<AnyCancellable>()
+    private var activePressSamples: [Int64: SelectedSoundSample] = [:]
     
     init(eventManager: EventTapManager, 
          audioManager: AudioEngineManager, 
@@ -32,13 +33,17 @@ class AppController: ObservableObject {
     
     private func setupWiring() {
         // Essential: Connect the low-level EventTap events to the Audio Engine
-        eventManager.onKeyDown = { [weak self] keyType, isRepeat, holdDuration in
+        eventManager.onKeyDown = { [weak self] keyCode, keyType, isRepeat, holdDuration in
             guard let self = self else { return }
             
-            // Only play if not muted
-            self.statsManager.incrementKeystroke()
+            if !isRepeat {
+                self.statsManager.incrementKeystroke()
+            }
             
             if let sample = self.soundPackManager.getRandomDownSound(for: keyType) {
+                if !isRepeat {
+                    self.activePressSamples[keyCode] = sample
+                }
                 self.audioManager.playSound(
                     url: sample.url,
                     keyGroup: sample.playbackGroup,
@@ -49,11 +54,22 @@ class AppController: ObservableObject {
             }
         }
         
-        eventManager.onKeyUp = { [weak self] keyType, _ in
+        eventManager.onKeyUp = { [weak self] keyCode, keyType in
             guard let self = self else { return }
-            
-            if let sample = self.soundPackManager.getUpSound(for: keyType) {
-                self.audioManager.playSound(url: sample.url, keyGroup: sample.playbackGroup, isRepeat: false, isKeyUp: true)
+
+            let rememberedPress = self.activePressSamples.removeValue(forKey: keyCode)
+            let nativeRelease = self.soundPackManager.getUpSound(for: keyType)
+            if let sample = SoundPackManager.resolvedKeyUpSample(
+                nativeRelease: nativeRelease,
+                fallbackPress: rememberedPress
+            ) {
+                self.audioManager.playSound(
+                    url: sample.url,
+                    keyGroup: sample.playbackGroup,
+                    isRepeat: false,
+                    isKeyUp: true,
+                    isFallbackRelease: nativeRelease == nil
+                )
             }
         }
     }
@@ -81,9 +97,17 @@ class AppController: ObservableObject {
                 )
             }
             .store(in: &cancellables)
+
+        audioManager.$performanceMode
+            .sink { [weak self] mode in
+                let configuration = AudioEngineManager.configuration(for: mode)
+                self?.statsManager.updatePersistenceInterval(configuration.statsFlushInterval)
+            }
+            .store(in: &cancellables)
     }
     
     private func refreshPackBuffers() {
+        activePressSamples.removeAll()
         let urls = soundPackManager.allSoundURLs()
         audioManager.prebufferPack(urls: urls)
         print("[AppController] Re-buffered sounds for: \(soundPackManager.activePackName)")

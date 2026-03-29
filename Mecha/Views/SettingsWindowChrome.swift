@@ -5,23 +5,18 @@ struct SettingsWindowChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content.background(
             SettingsWindowAccessor { window in
-                if !window.styleMask.contains(.fullSizeContentView) {
-                    window.styleMask.insert(.fullSizeContentView)
+                if window.styleMask.contains(.fullSizeContentView) {
+                    window.styleMask.remove(.fullSizeContentView)
                 }
 
                 window.titleVisibility = .hidden
-                window.titlebarAppearsTransparent = true
-                window.isMovableByWindowBackground = true
+                window.titlebarAppearsTransparent = false
+                window.isMovableByWindowBackground = false
                 if window.toolbar != nil {
                     window.toolbar = nil
                 }
 
-                window.backgroundColor = NSColor(
-                    calibratedRed: 0.08,
-                    green: 0.09,
-                    blue: 0.12,
-                    alpha: 1
-                )
+                window.backgroundColor = .windowBackgroundColor
 
                 if #available(macOS 11.0, *) {
                     window.tabbingMode = .disallowed

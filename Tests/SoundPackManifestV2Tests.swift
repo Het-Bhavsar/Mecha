@@ -133,5 +133,12 @@ struct SoundPackManifestV2Tests {
         expect(cherrySwitch?.variants.count == 2, "grouped catalog should preserve separate audio variants")
         expect(cherrySwitch?.variants.first?.displayName == "Cherry MX Blue - Bundled", "default variant should get a disambiguated display label when other variants exist")
         expect(cherrySwitch?.variants.last?.displayName == "Cherry MX Blue - ABS", "explicit variant labels should surface in the display name")
+
+        let fallbackReleaseURL = URL(fileURLWithPath: "/tmp/down.wav")
+        let nativeReleaseURL = URL(fileURLWithPath: "/tmp/up.wav")
+        let rememberedDownstroke = SelectedSoundSample(sampleGroup: "alphanumeric", playbackGroup: "alphanumeric_left", url: fallbackReleaseURL)
+        let nativeRelease = SelectedSoundSample(sampleGroup: "alphanumeric", playbackGroup: "alphanumeric_left", url: nativeReleaseURL)
+        expect(SoundPackManager.resolvedKeyUpSample(nativeRelease: nil, fallbackPress: rememberedDownstroke)?.url == fallbackReleaseURL, "missing native release samples should fall back to the remembered downstroke sample")
+        expect(SoundPackManager.resolvedKeyUpSample(nativeRelease: nativeRelease, fallbackPress: rememberedDownstroke)?.url == nativeReleaseURL, "native release samples should win over fallback downstrokes")
     }
 }

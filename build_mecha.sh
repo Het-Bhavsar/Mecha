@@ -8,6 +8,8 @@ ENV_FILE="$ROOT_DIR/version.env"
 
 # shellcheck disable=SC1091
 source "$ROOT_DIR/scripts/versioning.sh"
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/release_common.sh"
 
 bump_patch_version "$ENV_FILE"
 sync_version_metadata \
@@ -45,12 +47,17 @@ swiftc -sdk $(xcrun --show-sdk-path --sdk macosx) \
     Mecha/Views/*.swift \
     -o "$CONTENTS/MacOS/$APP_NAME"
 
-echo "[*] Hardening Identity (v2.7)..."
-codesign --force --deep --sign - \
-    --entitlements Mecha.entitlements \
-    --identifier "$BUNDLE_ID" \
-    --requirements '=designated => identifier "com.hetbhavsar.Mecha"' \
-    "$APP_BUNDLE"
+SIGNING_MODE="$(resolve_signing_mode)"
+echo "[*] Signing Mecha ($SIGNING_MODE)..."
+codesign_bundle "$APP_BUNDLE" "$ROOT_DIR/Mecha.entitlements" "$BUNDLE_ID"
+
+echo "[*] Verifying code signature..."
+codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+
+if [[ "$SIGNING_MODE" == "developer_id" ]]; then
+    echo "[*] Checking Gatekeeper acceptance..."
+    spctl -a -vv --type exec "$APP_BUNDLE"
+fi
 
 echo "[*] Build Complete: $APP_BUNDLE"
 echo "[*] Version: $APP_VERSION ($BUILD_NUMBER)"

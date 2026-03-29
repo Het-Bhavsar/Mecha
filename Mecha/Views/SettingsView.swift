@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import ServiceManagement
 
@@ -93,6 +94,7 @@ struct SettingsView: View {
     @ObservedObject var audioManager: AudioEngineManager
     @ObservedObject var soundPackManager: SoundPackManager
     @ObservedObject var storeManager: StoreManager
+    @ObservedObject var statsManager: StatsManager
     
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var selectedTab: SettingsTab = .performance
@@ -107,37 +109,29 @@ struct SettingsView: View {
     private let footerMeterHeights: [CGFloat] = [8, 12, 18, 14, 22, 16, 10, 14, 20, 12]
     
     var body: some View {
-        GeometryReader { geometry in
-            let metrics = SettingsWindowMetrics(topSafeAreaInset: geometry.safeAreaInsets.top)
+        let metrics = SettingsWindowMetrics(topSafeAreaInset: 0)
 
-            HStack(spacing: 0) {
-                sidebar(metrics: metrics)
-                Rectangle()
-                    .fill(Color.white.opacity(SettingsWindowMetrics.dividerOpacity))
-                    .frame(width: 1)
-                detailPane(metrics: metrics)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.08, green: 0.09, blue: 0.12),
-                        Color(red: 0.05, green: 0.06, blue: 0.09)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .ignoresSafeArea(.container, edges: .top)
+        HStack(spacing: 0) {
+            sidebar(metrics: metrics)
+            Rectangle()
+                .fill(separatorColor)
+                .frame(width: 1)
+            detailPane(metrics: metrics)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(windowBackground)
         .settingsWindowChrome()
         .frame(minWidth: 880, minHeight: 560)
+        .onAppear {
+            statsManager.refreshIfNeeded()
+        }
     }
     
     private var performanceSection: some View {
         VStack(alignment: .leading, spacing: SettingsWindowMetrics.sectionSpacing) {
             summaryStrip(items: [
                 ("Startup", launchAtLogin ? "Enabled" : "Manual"),
+                ("Mode", audioManager.performanceMode.displayName),
                 ("Profile", soundPackManager.activePackDisplayName),
                 ("Output", audioManager.isMuted ? "Muted" : "\(Int(audioManager.masterVolume * 100))%")
             ])
@@ -148,7 +142,7 @@ struct SettingsView: View {
             ) {
                 settingRow(
                     title: "Launch at login",
-                    subtitle: "Open silently in the menu bar and keep the playback engine warmed up."
+                    subtitle: "Open silently in the menu bar and restore your selected performance profile."
                 ) {
                     Toggle("", isOn: $launchAtLogin)
                         .toggleStyle(.switch)
@@ -156,6 +150,26 @@ struct SettingsView: View {
                         .onChange(of: launchAtLogin) { _, newValue in
                             toggleLaunchAtLogin(newValue)
                         }
+                }
+
+                cardDivider
+
+                settingRow(
+                    title: "Performance mode",
+                    subtitle: "Choose how aggressively Mecha trades idle battery life against first-key latency."
+                ) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("", selection: $audioManager.performanceMode) {
+                            ForEach(PerformanceMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text(audioManager.performanceMode.detailText)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(tertiaryText)
+                    }
                 }
             }
 
@@ -222,7 +236,7 @@ struct SettingsView: View {
                             Text("Bright")
                         }
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.42))
+                        .foregroundStyle(tertiaryText)
                     }
                 }
             }
@@ -362,10 +376,10 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Mecha Pro is active")
                                 .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(Color.white.opacity(0.96))
+                                .foregroundStyle(primaryText)
                             Text("Lifetime commercial access verified for this build.")
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(Color.white.opacity(0.58))
+                                .foregroundStyle(secondaryText)
                         }
 
                         Spacer()
@@ -373,10 +387,10 @@ struct SettingsView: View {
                     .padding(SettingsWindowMetrics.cardPadding)
                     .background(
                         RoundedRectangle(cornerRadius: SettingsWindowMetrics.cardCornerRadius, style: .continuous)
-                            .fill(Color(red: 0.18, green: 0.32, blue: 0.63).opacity(0.18))
+                            .fill(accentFill)
                             .overlay(
                                 RoundedRectangle(cornerRadius: SettingsWindowMetrics.cardCornerRadius, style: .continuous)
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                    .stroke(selectedBorderColor, lineWidth: 1)
                             )
                     )
                 }
@@ -433,7 +447,7 @@ struct SettingsView: View {
 
                 Text("Prepared by Het Bhavsar for this local build.")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.48))
+                    .foregroundStyle(tertiaryText)
             }
         }
     }
@@ -477,7 +491,7 @@ struct SettingsView: View {
 
     private var cardDivider: some View {
         Rectangle()
-            .fill(Color.white.opacity(SettingsWindowMetrics.dividerOpacity))
+            .fill(separatorColor)
             .frame(height: 1)
     }
 
@@ -493,31 +507,26 @@ struct SettingsView: View {
                             .resizable()
                             .scaledToFit()
                             .padding(6)
-                            .foregroundStyle(Color.white.opacity(0.88))
+                            .foregroundStyle(primaryText)
                     }
                 }
                 .frame(width: 30, height: 30)
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.14),
-                                    Color.white.opacity(0.04)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                        .fill(tileBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .stroke(separatorColor, lineWidth: 1)
                         )
                 )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Mecha")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.96))
+                        .foregroundStyle(primaryText)
                     Text("Native acoustic controls")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.42))
+                        .foregroundStyle(secondaryText)
                 }
             }
             .padding(.leading, metrics.sidebarHeaderLeadingInset)
@@ -533,7 +542,7 @@ struct SettingsView: View {
                             Text(section.title.uppercased())
                                 .font(.system(size: 11, weight: .semibold))
                                 .tracking(0.8)
-                                .foregroundStyle(Color.white.opacity(0.34))
+                                .foregroundStyle(tertiaryText)
                                 .padding(.horizontal, 8)
 
                             VStack(alignment: .leading, spacing: 8) {
@@ -553,16 +562,7 @@ struct SettingsView: View {
         }
         .frame(width: SettingsWindowMetrics.sidebarWidth)
         .frame(maxHeight: .infinity)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(red: 0.10, green: 0.11, blue: 0.14),
-                    Color(red: 0.08, green: 0.09, blue: 0.11)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+        .background(sidebarBackground)
     }
 
     private func sidebarButton(for tab: SettingsTab) -> some View {
@@ -577,22 +577,22 @@ struct SettingsView: View {
                 Image(systemName: tab.symbol)
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 18)
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.98) : Color.white.opacity(0.72))
+                    .foregroundStyle(isSelected ? primaryText : secondaryText)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(tab.sidebarTitle)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.98) : Color.white.opacity(0.82))
+                        .foregroundStyle(primaryText)
                     Text(tab.sidebarDescription)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.65) : Color.white.opacity(0.42))
+                        .foregroundStyle(isSelected ? secondaryText : tertiaryText)
                 }
 
                 Spacer(minLength: 8)
 
                 if isSelected {
                     Circle()
-                        .fill(Color.white.opacity(0.92))
+                        .fill(Color.accentColor)
                         .frame(width: 6, height: 6)
                 }
             }
@@ -601,31 +601,13 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        isSelected
-                            ? LinearGradient(
-                                colors: [
-                                    Color(red: 0.21, green: 0.38, blue: 0.73).opacity(0.58),
-                                    Color(red: 0.13, green: 0.20, blue: 0.36).opacity(0.72)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.035),
-                                    Color.white.opacity(0.015)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                    )
+                    .fill(isSelected ? selectedFill : tileBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(isSelected ? 0.14 : 0.06), lineWidth: 1)
+                            .stroke(isSelected ? selectedBorderColor : separatorColor, lineWidth: 1)
                     )
             )
-            .shadow(color: .black.opacity(isSelected ? 0.22 : 0.0), radius: 12, x: 0, y: 8)
+            .shadow(color: .black.opacity(isSelected ? 0.08 : 0.0), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
@@ -634,11 +616,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Copyright © 2026 Het Bhavsar")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.white.opacity(0.54))
+                .foregroundStyle(secondaryText)
 
             Text("All rights reserved.")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.white.opacity(0.34))
+                .foregroundStyle(tertiaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -652,10 +634,10 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(selectedTab.detailTitle)
                         .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.96))
+                        .foregroundStyle(primaryText)
                     Text(selectedTab.detailSubtitle)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.54))
+                        .foregroundStyle(secondaryText)
                 }
 
                 Spacer(minLength: 16)
@@ -699,7 +681,7 @@ struct SettingsView: View {
                 Text(footerStatusText.uppercased())
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(Color.white.opacity(0.48))
+                    .foregroundStyle(secondaryText)
 
                 Spacer(minLength: 16)
 
@@ -712,18 +694,11 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.07, green: 0.08, blue: 0.11),
-                        Color(red: 0.05, green: 0.06, blue: 0.09)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                windowBackground
 
                 RadialGradient(
                     colors: [
-                        Color(red: 0.21, green: 0.36, blue: 0.62).opacity(0.28),
+                        Color.accentColor.opacity(0.08),
                         Color.clear
                     ],
                     center: .topLeading,
@@ -759,10 +734,10 @@ struct SettingsView: View {
                     Text(item.0.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .tracking(0.8)
-                        .foregroundStyle(Color.white.opacity(0.42))
+                        .foregroundStyle(tertiaryText)
                     Text(item.1)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.white.opacity(0.96))
+                        .foregroundStyle(primaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
@@ -770,7 +745,7 @@ struct SettingsView: View {
             }
         }
         .padding(SettingsWindowMetrics.cardPadding)
-        .background(cardSurface(highlight: Color(red: 0.20, green: 0.34, blue: 0.62).opacity(0.18)))
+        .background(cardSurface(highlight: accentFill))
     }
 
     private func settingsCard<Content: View>(
@@ -782,10 +757,10 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.95))
+                    .foregroundStyle(primaryText)
                 Text(subtitle)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.56))
+                    .foregroundStyle(secondaryText)
             }
 
             VStack(alignment: .leading, spacing: SettingsWindowMetrics.rowSpacing) {
@@ -805,10 +780,10 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.92))
+                    .foregroundStyle(primaryText)
                 Text(subtitle)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.46))
+                    .foregroundStyle(tertiaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(width: SettingsWindowMetrics.controlLabelWidth, alignment: .leading)
@@ -828,7 +803,7 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 Label("", systemImage: systemImage)
                     .labelStyle(.iconOnly)
-                    .foregroundStyle(Color.white.opacity(0.48))
+                    .foregroundStyle(secondaryText)
                     .frame(width: 18)
 
                 Slider(value: value, in: 0...2)
@@ -842,38 +817,76 @@ struct SettingsView: View {
     private func valueBadge(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color.white.opacity(0.92))
+            .foregroundStyle(primaryText)
             .lineLimit(1)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(tileBackground)
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(separatorColor, lineWidth: 1)
                     )
             )
     }
 
-    private func cardSurface(highlight: Color = Color.white.opacity(0.02)) -> some View {
+    private func cardSurface(highlight: Color = .clear) -> some View {
         RoundedRectangle(cornerRadius: SettingsWindowMetrics.cardCornerRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.08),
-                        highlight,
-                        Color.white.opacity(0.03)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+            .fill(surfaceBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: SettingsWindowMetrics.cardCornerRadius, style: .continuous)
+                    .fill(highlight)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: SettingsWindowMetrics.cardCornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(separatorColor, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 14)
+            .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 6)
+    }
+
+    private var windowBackground: Color {
+        Color(nsColor: .windowBackgroundColor)
+    }
+
+    private var sidebarBackground: Color {
+        Color(nsColor: .windowBackgroundColor)
+    }
+
+    private var surfaceBackground: Color {
+        Color(nsColor: .controlBackgroundColor)
+    }
+
+    private var tileBackground: Color {
+        Color(nsColor: .textBackgroundColor)
+    }
+
+    private var separatorColor: Color {
+        Color(nsColor: .separatorColor).opacity(0.6)
+    }
+
+    private var primaryText: Color {
+        Color(nsColor: .labelColor)
+    }
+
+    private var secondaryText: Color {
+        Color(nsColor: .secondaryLabelColor)
+    }
+
+    private var tertiaryText: Color {
+        Color(nsColor: .tertiaryLabelColor)
+    }
+
+    private var selectedFill: Color {
+        Color.accentColor.opacity(0.16)
+    }
+
+    private var selectedBorderColor: Color {
+        Color.accentColor.opacity(0.30)
+    }
+
+    private var accentFill: Color {
+        Color.accentColor.opacity(0.10)
     }
     
     private func toggleLaunchAtLogin(_ newValue: Bool) {

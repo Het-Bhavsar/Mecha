@@ -65,7 +65,8 @@ struct MechaApp: App {
             SettingsView(
                 audioManager: audioManager,
                 soundPackManager: soundPackManager,
-                storeManager: storeManager
+                storeManager: storeManager,
+                statsManager: statsManager
             )
         }
         

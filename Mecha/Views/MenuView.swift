@@ -54,10 +54,10 @@ struct MenuView: View {
                             .frame(width: 16, height: 2)
                     } else {
                         HStack(spacing: 2) {
-                            ForEach(0..<4) { i in
+                            ForEach(Array(audioManager.performanceMode.indicatorHeights.enumerated()), id: \.offset) { _, height in
                                 RoundedRectangle(cornerRadius: 1)
                                     .fill(Color.blue.opacity(0.8))
-                                    .frame(width: 2, height: CGFloat.random(in: 4...12))
+                                    .frame(width: 2, height: height)
                             }
                         }
                     }
@@ -251,6 +251,7 @@ struct MenuView: View {
         .frame(width: 320)
         .onAppear {
             eventManager.checkTrust()
+            statsManager.refreshIfNeeded()
         }
     }
     

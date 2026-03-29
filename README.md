@@ -57,6 +57,19 @@ Each build bumps the patch version and build number through [`version.env`](./ve
 bash ./create_dmg.sh
 ```
 
+## Internal Evaluation On macOS
+
+For internal testing, Mecha can be opened manually even before Developer ID signing and notarization are in place.
+
+1. Open `Mecha.app`, or drag it from the DMG to `Applications` and try launching it once.
+2. macOS will block it.
+3. Open `System Settings > Privacy & Security`.
+4. Near the bottom, find the message that says `Mecha` was blocked.
+5. Click `Open Anyway`.
+6. Confirm again in the follow-up dialog.
+
+This is only a temporary evaluation path for trusted internal Macs. Public distribution still needs proper Apple signing and notarization.
+
 ## Project Layout
 
 - [`Mecha/`](./Mecha): Swift source, app resources, sound packs, icons, and views
