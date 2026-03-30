@@ -10,10 +10,103 @@ load_release_env() {
     set +a
 }
 
+sparkle_vendor_root() {
+    local root_dir="$1"
+    printf '%s/vendor/Sparkle/sparkle-spm\n' "$root_dir"
+}
+
+sparkle_framework_path() {
+    local root_dir="$1"
+    printf '%s/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework\n' "$(sparkle_vendor_root "$root_dir")"
+}
+
+sparkle_framework_parent() {
+    local root_dir="$1"
+    printf '%s/Sparkle.xcframework/macos-arm64_x86_64\n' "$(sparkle_vendor_root "$root_dir")"
+}
+
+sparkle_generate_appcast_bin() {
+    local root_dir="$1"
+    printf '%s/bin/generate_appcast\n' "$(sparkle_vendor_root "$root_dir")"
+}
+
+sparkle_key_account() {
+    printf '%s\n' "${MECHA_SPARKLE_KEY_ACCOUNT:-ed25519}"
+}
+
+github_owner_for_env() {
+    local env_file="$1"
+    load_release_env "$env_file"
+    printf '%s\n' "${GITHUB_OWNER:-Het-Bhavsar}"
+}
+
+github_repo_for_env() {
+    local env_file="$1"
+    load_release_env "$env_file"
+    printf '%s\n' "${GITHUB_REPO:-Mecha}"
+}
+
 release_tag_for_env() {
     local env_file="$1"
     load_release_env "$env_file"
     printf 'v%s\n' "$APP_VERSION"
+}
+
+release_commit_message_for_env() {
+    local env_file="$1"
+    printf 'release: %s\n' "$(release_tag_for_env "$env_file")"
+}
+
+release_zip_name_for_env() {
+    local env_file="$1"
+    load_release_env "$env_file"
+    printf '%s_v%s.zip\n' "$APP_NAME" "$APP_VERSION"
+}
+
+appcast_feed_url_for_env() {
+    local env_file="$1"
+    load_release_env "$env_file"
+
+    local base_url="${APPCAST_BASE_URL:-https://het-bhavsar.github.io/Mecha}"
+    base_url="${base_url%/}"
+    printf '%s/appcast.xml\n' "$base_url"
+}
+
+github_release_asset_url_for_env() {
+    local env_file="$1"
+    local asset_kind="$2"
+    local owner repo tag asset_name
+
+    owner="$(github_owner_for_env "$env_file")"
+    repo="$(github_repo_for_env "$env_file")"
+    tag="$(release_tag_for_env "$env_file")"
+
+    case "$asset_kind" in
+        zip)
+            asset_name="$(release_zip_name_for_env "$env_file")"
+            ;;
+        *)
+            echo "Unsupported asset kind: $asset_kind" >&2
+            return 1
+            ;;
+    esac
+
+    printf 'https://github.com/%s/%s/releases/download/%s/%s\n' "$owner" "$repo" "$tag" "$asset_name"
+}
+
+github_repository_slug_for_env() {
+    local env_file="$1"
+    printf '%s/%s\n' "$(github_owner_for_env "$env_file")" "$(github_repo_for_env "$env_file")"
+}
+
+github_release_url_for_env() {
+    local env_file="$1"
+    printf 'https://github.com/%s/releases/tag/%s\n' "$(github_repository_slug_for_env "$env_file")" "$(release_tag_for_env "$env_file")"
+}
+
+github_repository_url_for_env() {
+    local env_file="$1"
+    printf 'https://github.com/%s\n' "$(github_repository_slug_for_env "$env_file")"
 }
 
 resolve_signing_mode() {

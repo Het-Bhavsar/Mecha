@@ -1,0 +1,28 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Mecha</title>
+        <item>
+            <title>3.0.32</title>
+            <pubDate>Mon, 30 Mar 2026 20:53:25 +0530</pubDate>
+            <link>https://github.com/Het-Bhavsar/Mecha</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/Het-Bhavsar/Mecha/releases/tag/v3.0.32</sparkle:fullReleaseNotesLink>
+            <sparkle:version>33</sparkle:version>
+            <sparkle:shortVersionString>3.0.32</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/Het-Bhavsar/Mecha/releases/download/v3.0.32/Mecha_v3.0.32.zip" length="90148502" type="application/octet-stream" sparkle:edSignature="cQwHbcGkekqOv2xjSiaceSwFHd4++uEptlTVGsqQhCUxPDXLHWO5jBkcQy4gFC8hugPlUAzR8iBaT98T6M6MBw=="/>
+        </item>
+        <item>
+            <title>3.0.27</title>
+            <pubDate>Mon, 30 Mar 2026 20:21:27 +0530</pubDate>
+            <link>https://github.com/Het-Bhavsar/Mecha</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/Het-Bhavsar/Mecha/releases/tag/v3.0.27</sparkle:fullReleaseNotesLink>
+            <sparkle:version>28</sparkle:version>
+            <sparkle:shortVersionString>3.0.27</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/Het-Bhavsar/Mecha/releases/download/v3.0.27/Mecha_v3.0.27.zip" length="90135281" type="application/octet-stream" sparkle:edSignature="7GAkdeK460if79v2o6LyQydqi7PI/nqNfLicKDR/vqet19kHl747yKh+02V0rmkIKzBQj9B7zgt5yUw6ivDcBg=="/>
+        </item>
+    </channel>
+</rss>

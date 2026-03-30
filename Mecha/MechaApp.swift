@@ -13,6 +13,7 @@ struct MechaApp: App {
     @StateObject private var soundPackManager: SoundPackManager
     @StateObject private var storeManager: StoreManager
     @StateObject private var statsManager: StatsManager
+    @StateObject private var updateManager: UpdateManager
     
     // Persistent background controller that wires events to audio
     @StateObject private var appController: AppController
@@ -23,12 +24,14 @@ struct MechaApp: App {
         let pack = SoundPackManager()
         let store = StoreManager()
         let stats = StatsManager()
+        let updater = UpdateManager()
         
         self._eventManager = StateObject(wrappedValue: event)
         self._audioManager = StateObject(wrappedValue: audio)
         self._soundPackManager = StateObject(wrappedValue: pack)
         self._storeManager = StateObject(wrappedValue: store)
         self._statsManager = StateObject(wrappedValue: stats)
+        self._updateManager = StateObject(wrappedValue: updater)
         
         self._appController = StateObject(wrappedValue: AppController(
             eventManager: event,
@@ -54,7 +57,8 @@ struct MechaApp: App {
                 audioManager: audioManager,
                 soundPackManager: soundPackManager,
                 storeManager: storeManager,
-                statsManager: statsManager
+                statsManager: statsManager,
+                updateManager: updateManager
             )
         } label: {
             Image(nsImage: Self.menuBarIcon)
@@ -66,7 +70,8 @@ struct MechaApp: App {
                 audioManager: audioManager,
                 soundPackManager: soundPackManager,
                 storeManager: storeManager,
-                statsManager: statsManager
+                statsManager: statsManager,
+                updateManager: updateManager
             )
         }
         

@@ -22,6 +22,26 @@ if [[ "$(release_tag_for_env "$ENV_FILE")" != "v3.0.17" ]]; then
     exit 1
 fi
 
+if [[ "$(release_commit_message_for_env "$ENV_FILE")" != "release: v3.0.17" ]]; then
+    echo "Expected release commit message release: v3.0.17" >&2
+    exit 1
+fi
+
+if [[ "$(release_zip_name_for_env "$ENV_FILE")" != "Mecha_v3.0.17.zip" ]]; then
+    echo "Expected updater zip asset name Mecha_v3.0.17.zip" >&2
+    exit 1
+fi
+
+if [[ "$(github_release_asset_url_for_env "$ENV_FILE" zip)" != "https://github.com/Het-Bhavsar/Mecha/releases/download/v3.0.17/Mecha_v3.0.17.zip" ]]; then
+    echo "Expected GitHub release zip URL" >&2
+    exit 1
+fi
+
+if [[ "$(appcast_feed_url_for_env "$ENV_FILE")" != "https://het-bhavsar.github.io/Mecha/appcast.xml" ]]; then
+    echo "Expected GitHub Pages appcast URL" >&2
+    exit 1
+fi
+
 unset MECHA_SIGN_MODE || true
 unset MECHA_SIGN_IDENTITY || true
 unset MECHA_NOTARY_PROFILE || true

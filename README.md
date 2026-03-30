@@ -57,6 +57,31 @@ Each build bumps the patch version and build number through [`version.env`](./ve
 bash ./create_dmg.sh
 ```
 
+## GitHub Release Updates
+
+Mecha now supports Sparkle-based updates for existing installs using:
+
+- GitHub Releases for update archives
+- GitHub Pages for the `appcast.xml` feed
+- a versioned `.zip` for in-app updates
+- a `.dmg` for first-time manual installs
+
+To publish an updater-aware release:
+
+```bash
+bash ./release_mecha.sh
+```
+
+That release flow:
+
+1. builds `Mecha.app`
+2. creates the updater `.zip`
+3. creates the installer `.dmg`
+4. uploads both assets to GitHub Releases
+5. regenerates the GitHub Pages appcast in `docs/appcast-site/`
+
+The first updater-enabled build still needs to be installed manually once. After that, users can use `Check for Updates` from the menu or settings, and Mecha can also poll the feed automatically.
+
 ## Internal Evaluation On macOS
 
 For internal testing, Mecha can be opened manually even before Developer ID signing and notarization are in place.

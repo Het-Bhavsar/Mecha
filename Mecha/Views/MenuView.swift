@@ -6,6 +6,7 @@ struct MenuView: View {
     @ObservedObject var soundPackManager: SoundPackManager
     @ObservedObject var storeManager: StoreManager
     @ObservedObject var statsManager: StatsManager
+    @ObservedObject var updateManager: UpdateManager
     
     @State private var isMixerExpanded: Bool = false
     @Environment(\.openWindow) var openWindow
@@ -228,30 +229,78 @@ struct MenuView: View {
             Divider()
             
             // Footer Controls
-            HStack {
-                Button("Pro Max Settings") {
+            HStack(spacing: 0) {
+                footerAction(
+                    title: "Check for Updates",
+                    alignment: .leading,
+                    fontWeight: .semibold,
+                    isEnabled: updateManager.canCheckForUpdates,
+                    foregroundColor: updateManager.canCheckForUpdates ? .primary : .secondary
+                ) {
+                    updateManager.checkForUpdates()
+                }
+                .frame(minWidth: 148, alignment: .leading)
+
+                footerAction(
+                    title: "Settings",
+                    alignment: .center,
+                    fontWeight: .bold
+                ) {
                     openWindow(id: "settings")
                     NSApp.activate(ignoringOtherApps: true)
                 }
-                .buttonStyle(.plain)
-                .font(.system(size: 11, weight: .bold))
-                
-                Spacer()
-                
-                Button("Quit") {
+                .frame(width: 88, alignment: .center)
+
+                footerAction(
+                    title: "Quit",
+                    alignment: .center,
+                    fontWeight: .medium,
+                    foregroundColor: .secondary
+                ) {
                     NSApplication.shared.terminate(nil)
                 }
-                .buttonStyle(.plain)
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .frame(width: 52, alignment: .center)
             }
-            .padding(.top, 4)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 6)
         }
         .padding()
         .frame(width: 320)
         .onAppear {
             eventManager.checkTrust()
             statsManager.refreshIfNeeded()
+            updateManager.refreshFeedAvailabilityIfNeeded()
+        }
+    }
+
+    private func footerAction(
+        title: String,
+        alignment: Alignment,
+        fontWeight: Font.Weight,
+        isEnabled: Bool = true,
+        foregroundColor: Color = .primary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: textAlignment(for: alignment))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 11, weight: fontWeight))
+        .foregroundColor(foregroundColor)
+        .disabled(!isEnabled)
+        .frame(maxWidth: .infinity, minHeight: 22, alignment: alignment)
+    }
+
+    private func textAlignment(for alignment: Alignment) -> SwiftUI.Alignment {
+        switch alignment {
+        case .leading:
+            return .leading
+        case .trailing:
+            return .trailing
+        default:
+            return .center
         }
     }
     

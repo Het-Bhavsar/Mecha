@@ -11,9 +11,9 @@
     <key>CFBundleDisplayName</key>
     <string>Mecha</string>
     <key>CFBundleVersion</key>
-    <string>24</string>
+    <string>33</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.0.23</string>
+    <string>3.0.32</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleIconFile</key>
@@ -24,5 +24,21 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>GITHUB_OWNER</key>
+    <string>Het-Bhavsar</string>
+    <key>GITHUB_REPO</key>
+    <string>Mecha</string>
+    <key>APPCAST_BASE_URL</key>
+    <string>https://het-bhavsar.github.io/Mecha</string>
+    <key>SUFeedURL</key>
+    <string>https://het-bhavsar.github.io/Mecha/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>XqX/41XEIYKAzdmOXdwWmYCxOfH5Uk32AKUgOdTv75E=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUScheduledCheckInterval</key>
+    <real>86400</real>
+    <key>SUAutomaticallyUpdate</key>
+    <false/>
 </dict>
 </plist>

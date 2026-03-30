@@ -17,21 +17,36 @@ class EventTapManager: ObservableObject {
     private var runLoopSource: CFRunLoopSource?
     
     private var trustTimer: Timer?
-    
+    private var wakeObserver: NSObjectProtocol?
+    private var appDidBecomeActiveObserver: NSObjectProtocol?
+
     init() {
+        observeLifecycle()
         checkTrustAndStart()
         
         // Scalable approach: Actively poll until the user grants access
         // This bypasses the need for the user to click "Check Status" manually
         trustTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            if self.eventPort == nil {
+            if Self.shouldContinueTrustPolling(systemTrustGranted: self.isTrusted, eventTapExists: self.eventPort != nil) {
                 self.checkTrustAndStart(prompt: false)
             } else {
                 self.trustTimer?.invalidate()
                 self.trustTimer = nil
             }
         }
+    }
+
+    static func resolvedOperationalTrust(systemTrustGranted: Bool, eventTapExists: Bool) -> Bool {
+        systemTrustGranted && eventTapExists
+    }
+
+    static func shouldContinueTrustPolling(systemTrustGranted: Bool, eventTapExists: Bool) -> Bool {
+        !resolvedOperationalTrust(systemTrustGranted: systemTrustGranted, eventTapExists: eventTapExists)
+    }
+
+    static func shouldRestartTap(previouslyTrusted: Bool, systemTrustGranted: Bool, eventTapExists: Bool) -> Bool {
+        systemTrustGranted && !previouslyTrusted && eventTapExists
     }
     
     /// Checks trust and attempts to start the tap. Only prompts on explicit demand.
@@ -41,14 +56,35 @@ class EventTapManager: ObservableObject {
         let systemSaysTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
         
         DispatchQueue.main.async {
-            // If we don't have the port yet, let's aggressively try to get it
+            let wasOperationallyTrusted = self.isTrusted
+            let hasEventTap = self.eventPort != nil
+
+            if !systemSaysTrusted {
+                if hasEventTap {
+                    self.log("[Permissions] System trust is false; tearing down stale event tap.")
+                    self.stopTap()
+                }
+                self.isTrusted = false
+                return
+            }
+
+            if Self.shouldRestartTap(
+                previouslyTrusted: wasOperationallyTrusted,
+                systemTrustGranted: systemSaysTrusted,
+                eventTapExists: hasEventTap
+            ) {
+                self.log("[Permissions] Trust changed to granted; rebuilding event tap for the current session.")
+                self.stopTap()
+            }
+
             if self.eventPort == nil {
                 self.startTap()
             }
-            
-            // Scalable fix: Never rely blindly on the buggy TCC API `systemSaysTrusted`
-            // True trust is defined exclusively by whether the OS gave us a valid event loop port!
-            self.isTrusted = systemSaysTrusted || (self.eventPort != nil)
+
+            self.isTrusted = Self.resolvedOperationalTrust(
+                systemTrustGranted: systemSaysTrusted,
+                eventTapExists: self.eventPort != nil
+            )
         }
     }
     
@@ -72,6 +108,24 @@ class EventTapManager: ObservableObject {
             fileHandle.closeFile()
         } else {
             try? "\(Date()): \(message)\n".write(toFile: logPath, atomically: true, encoding: .utf8)
+        }
+    }
+
+    private func observeLifecycle() {
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.checkTrustAndStart(prompt: false)
+        }
+
+        appDidBecomeActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.checkTrustAndStart(prompt: false)
         }
     }
 
@@ -169,6 +223,13 @@ class EventTapManager: ObservableObject {
     }
     
     deinit {
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+        }
+        if let appDidBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(appDidBecomeActiveObserver)
+        }
+        trustTimer?.invalidate()
         stopTap()
     }
     

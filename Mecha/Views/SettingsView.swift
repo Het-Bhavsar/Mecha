@@ -95,6 +95,7 @@ struct SettingsView: View {
     @ObservedObject var soundPackManager: SoundPackManager
     @ObservedObject var storeManager: StoreManager
     @ObservedObject var statsManager: StatsManager
+    @ObservedObject var updateManager: UpdateManager
     
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var selectedTab: SettingsTab = .performance
@@ -124,6 +125,7 @@ struct SettingsView: View {
         .frame(minWidth: 880, minHeight: 560)
         .onAppear {
             statsManager.refreshIfNeeded()
+            updateManager.refreshFeedAvailabilityIfNeeded()
         }
     }
     
@@ -448,6 +450,52 @@ struct SettingsView: View {
                 Text("Prepared by Het Bhavsar for this local build.")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(tertiaryText)
+            }
+
+            settingsCard(
+                title: "Updates",
+                subtitle: "Receive new Mecha builds from the GitHub release feed."
+            ) {
+                settingRow(
+                    title: "Feed",
+                    subtitle: "Sparkle checks the GitHub Pages appcast and installs release zip updates."
+                ) {
+                    valueBadge("GitHub Releases")
+                }
+
+                cardDivider
+
+                settingRow(
+                    title: "Automatic checks",
+                    subtitle: "Let Mecha look for new versions in the background."
+                ) {
+                    Toggle("", isOn: $updateManager.automaticallyChecksForUpdates)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                }
+
+                cardDivider
+
+                settingRow(
+                    title: "Manual check",
+                    subtitle: updateManager.updateBehaviorDescription
+                ) {
+                    Button("Check for Updates") {
+                        updateManager.checkForUpdates()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!updateManager.canCheckForUpdates)
+                }
+
+                cardDivider
+
+                settingRow(
+                    title: "Feed URL",
+                    subtitle: "Stable updater endpoint hosted on GitHub Pages."
+                ) {
+                    Link("Open Feed", destination: updateManager.feedURL)
+                        .font(.system(size: 12, weight: .semibold))
+                }
             }
         }
     }

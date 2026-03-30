@@ -24,12 +24,16 @@ cd "$ROOT_DIR"
 BUILD_ROOT="build"
 APP_BUNDLE="$BUILD_ROOT/$APP_NAME.app"
 CONTENTS="$APP_BUNDLE/Contents"
+FRAMEWORKS_DIR="$CONTENTS/Frameworks"
+SPARKLE_FRAMEWORK="$(sparkle_framework_path "$ROOT_DIR")"
+SPARKLE_FRAMEWORK_PARENT="$(sparkle_framework_parent "$ROOT_DIR")"
 
 echo "[*] Targeted cleanup for persistent identity..."
 # Protect the bundle directory to preserve macOS permission metadata
 rm -f "$CONTENTS/MacOS/$APP_NAME"
 mkdir -p "$CONTENTS/MacOS"
 mkdir -p "$CONTENTS/Resources"
+mkdir -p "$FRAMEWORKS_DIR"
 
 echo "[*] Refreshing resources..."
 cp -R Mecha/Resources/* "$CONTENTS/Resources/" 2>/dev/null || true
@@ -40,8 +44,17 @@ if [ -f "Mecha/Resources/Icon/AppIcon.icns" ]; then
     cp "Mecha/Resources/Icon/AppIcon.icns" "$CONTENTS/Resources/"
 fi
 
+if [ -d "$SPARKLE_FRAMEWORK" ]; then
+    echo "[*] Embedding Sparkle framework..."
+    rm -rf "$FRAMEWORKS_DIR/Sparkle.framework"
+    ditto "$SPARKLE_FRAMEWORK" "$FRAMEWORKS_DIR/Sparkle.framework"
+fi
+
 echo "[*] Compiling Mecha (Swift)..."
 swiftc -sdk $(xcrun --show-sdk-path --sdk macosx) \
+    -F "$SPARKLE_FRAMEWORK_PARENT" \
+    -framework Sparkle \
+    -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
     Mecha/MechaApp.swift \
     Mecha/Managers/*.swift \
     Mecha/Views/*.swift \
