@@ -326,11 +326,11 @@ class AudioEngineManager: ObservableObject {
                     mScope: kAudioObjectPropertyScopeGlobal,
                     mElement: kAudioObjectPropertyElementMain
                 )
-                var nameString: CFString?
-                var nameDataSize = UInt32(MemoryLayout<CFString?>.size)
+                var nameString: Unmanaged<CFString>?
+                var nameDataSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
                 status = AudioObjectGetPropertyData(deviceID, &namePropertyAddress, 0, nil, &nameDataSize, &nameString)
                 
-                let name = (nameString as String?) ?? "Unknown Device"
+                let name = (nameString?.takeRetainedValue() as String?) ?? "Unknown Device"
                 outputDevices.append(AudioDevice(id: deviceID, name: name, isDefault: deviceID == defaultOutputDeviceID))
             }
         }

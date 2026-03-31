@@ -139,18 +139,6 @@ struct MenuView: View {
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                         Spacer()
-                        
-                        Picker("", selection: $audioManager.selectedDeviceID) {
-                            Text("System Default").tag(AudioDeviceID?.none)
-                            ForEach(audioManager.availableOutputDevices) { device in
-                                Text(device.name).tag(AudioDeviceID?.some(device.id))
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .controlSize(.mini)
-                        .frame(maxWidth: 120)
-
                         Toggle("", isOn: acousticEnabledBinding)
                             .toggleStyle(.switch)
                             .labelsHidden()
@@ -205,6 +193,18 @@ struct MenuView: View {
                 .background(Color.black.opacity(0.04))
                 .cornerRadius(8)
                 
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Sound Output").font(.system(size: 9, weight: .bold)).foregroundColor(.secondary)
+                    Picker("", selection: $audioManager.selectedDeviceID) {
+                        Text("System Default").tag(AudioDeviceID?.none)
+                        ForEach(audioManager.availableOutputDevices) { device in
+                            Text(device.name).tag(AudioDeviceID?.some(device.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sound Pack").font(.system(size: 9, weight: .bold)).foregroundColor(.secondary)
                     Picker("", selection: $soundPackManager.activePackName) {
