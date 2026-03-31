@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreAudio
 
 struct MenuView: View {
     @ObservedObject var eventManager: EventTapManager
@@ -138,6 +139,18 @@ struct MenuView: View {
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                         Spacer()
+                        
+                        Picker("", selection: $audioManager.selectedDeviceID) {
+                            Text("System Default").tag(AudioDeviceID?.none)
+                            ForEach(audioManager.availableOutputDevices) { device in
+                                Text(device.name).tag(AudioDeviceID?.some(device.id))
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .controlSize(.mini)
+                        .frame(maxWidth: 120)
+
                         Toggle("", isOn: acousticEnabledBinding)
                             .toggleStyle(.switch)
                             .labelsHidden()
@@ -267,6 +280,7 @@ struct MenuView: View {
         .padding()
         .frame(width: 320)
         .onAppear {
+            audioManager.refreshOutputDevices()
             eventManager.checkTrust()
             statsManager.refreshIfNeeded()
             updateManager.refreshFeedAvailabilityIfNeeded()
