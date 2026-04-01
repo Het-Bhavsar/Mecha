@@ -22,9 +22,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       GH_TOKEN: ${{ github.token }}
-      MECHA_SIGN_MODE: developer_id
-      MECHA_SIGN_IDENTITY: ${{ secrets.MECHA_SIGN_IDENTITY }}
-      MECHA_NOTARY_PROFILE: mecha-notary
       MECHA_RELEASE_TARGET: ${{ github.sha }}
       MECHA_SKIP_DMG_STYLING: 1
     steps:
@@ -40,7 +37,46 @@ jobs:
           bash ./Tests/test_release_metadata_validation.sh
           bash ./Tests/test_update_site.sh
 
+      - name: Resolve release capabilities
+        id: release_capabilities
+        env:
+          MECHA_SIGN_IDENTITY: ${{ secrets.MECHA_SIGN_IDENTITY }}
+          MECHA_SIGN_CERT_P12_BASE64: ${{ secrets.MECHA_SIGN_CERT_P12_BASE64 }}
+          MECHA_SIGN_CERT_PASSWORD: ${{ secrets.MECHA_SIGN_CERT_PASSWORD }}
+          MECHA_NOTARY_APPLE_ID: ${{ secrets.MECHA_NOTARY_APPLE_ID }}
+          MECHA_NOTARY_TEAM_ID: ${{ secrets.MECHA_NOTARY_TEAM_ID }}
+          MECHA_NOTARY_APP_PASSWORD: ${{ secrets.MECHA_NOTARY_APP_PASSWORD }}
+        run: |
+          source ./scripts/release_common.sh
+
+          if signing_secrets_ready; then
+            echo "signing_configured=true" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SIGN_MODE=developer_id" >> "$GITHUB_ENV"
+            {
+              echo "MECHA_SIGN_IDENTITY<<EOF"
+              echo "$MECHA_SIGN_IDENTITY"
+              echo "EOF"
+            } >> "$GITHUB_ENV"
+            echo "[*] Developer ID signing enabled for this release."
+          else
+            echo "signing_configured=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SIGN_MODE=adhoc" >> "$GITHUB_ENV"
+            echo "MECHA_SIGN_IDENTITY=" >> "$GITHUB_ENV"
+            echo "[*] Signing secrets are not configured; publishing internal-evaluation assets with ad-hoc signing."
+          fi
+
+          if notarization_secrets_ready; then
+            echo "notarization_configured=true" >> "$GITHUB_OUTPUT"
+            echo "MECHA_NOTARY_PROFILE=mecha-notary" >> "$GITHUB_ENV"
+            echo "[*] Apple notarization enabled for this release."
+          else
+            echo "notarization_configured=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_NOTARY_PROFILE=" >> "$GITHUB_ENV"
+            echo "[*] Apple notarization secrets are not configured; skipping notarization for internal usage."
+          fi
+
       - name: Import signing certificate
+        if: steps.release_capabilities.outputs.signing_configured == 'true'
         env:
           MECHA_SIGN_CERT_P12_BASE64: ${{ secrets.MECHA_SIGN_CERT_P12_BASE64 }}
           MECHA_SIGN_CERT_PASSWORD: ${{ secrets.MECHA_SIGN_CERT_PASSWORD }}
@@ -71,6 +107,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
       - name: Configure notarytool profile
+        if: steps.release_capabilities.outputs.notarization_configured == 'true'
         env:
           MECHA_NOTARY_APPLE_ID: ${{ secrets.MECHA_NOTARY_APPLE_ID }}
           MECHA_NOTARY_TEAM_ID: ${{ secrets.MECHA_NOTARY_TEAM_ID }}

@@ -132,6 +132,19 @@ resolve_signing_mode() {
     fi
 }
 
+signing_secrets_ready() {
+    [[ -n "${MECHA_SIGN_IDENTITY:-}" ]] && \
+    [[ -n "${MECHA_SIGN_CERT_P12_BASE64:-}" ]] && \
+    [[ -n "${MECHA_SIGN_CERT_PASSWORD:-}" ]]
+}
+
+notarization_secrets_ready() {
+    signing_secrets_ready && \
+    [[ -n "${MECHA_NOTARY_APPLE_ID:-}" ]] && \
+    [[ -n "${MECHA_NOTARY_TEAM_ID:-}" ]] && \
+    [[ -n "${MECHA_NOTARY_APP_PASSWORD:-}" ]]
+}
+
 distribution_signing_ready() {
     [[ "$(resolve_signing_mode)" == "developer_id" ]] && [[ -n "${MECHA_SIGN_IDENTITY:-}" ]]
 }

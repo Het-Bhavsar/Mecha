@@ -107,9 +107,24 @@ fi
 unset MECHA_SIGN_MODE || true
 unset MECHA_SIGN_IDENTITY || true
 unset MECHA_NOTARY_PROFILE || true
+unset MECHA_SIGN_CERT_P12_BASE64 || true
+unset MECHA_SIGN_CERT_PASSWORD || true
+unset MECHA_NOTARY_APPLE_ID || true
+unset MECHA_NOTARY_TEAM_ID || true
+unset MECHA_NOTARY_APP_PASSWORD || true
 
 if [[ "$(resolve_signing_mode)" != "adhoc" ]]; then
     echo "Expected default signing mode to be adhoc" >&2
+    exit 1
+fi
+
+if signing_secrets_ready; then
+    echo "Signing secrets should not be ready when certificate inputs are missing" >&2
+    exit 1
+fi
+
+if notarization_secrets_ready; then
+    echo "Notarization secrets should not be ready when Apple inputs are missing" >&2
     exit 1
 fi
 
@@ -119,8 +134,15 @@ if distribution_signing_ready; then
 fi
 
 MECHA_SIGN_IDENTITY="Developer ID Application: Example Corp (ABCD123456)"
+MECHA_SIGN_CERT_P12_BASE64="ZmFrZS1jZXJ0"
+MECHA_SIGN_CERT_PASSWORD="secret"
 if [[ "$(resolve_signing_mode)" != "developer_id" ]]; then
     echo "Expected signing mode to switch to developer_id when identity is set" >&2
+    exit 1
+fi
+
+if ! signing_secrets_ready; then
+    echo "Signing secrets should be ready when identity, certificate blob, and password are set" >&2
     exit 1
 fi
 
@@ -131,6 +153,19 @@ fi
 
 if notarization_ready; then
     echo "Notarization should not be ready without a notary profile" >&2
+    exit 1
+fi
+
+if notarization_secrets_ready; then
+    echo "Notarization secrets should not be ready without Apple notarization inputs" >&2
+    exit 1
+fi
+
+MECHA_NOTARY_APPLE_ID="dev@example.com"
+MECHA_NOTARY_TEAM_ID="ABCD123456"
+MECHA_NOTARY_APP_PASSWORD="app-password"
+if ! notarization_secrets_ready; then
+    echo "Notarization secrets should be ready when Apple notarization inputs are set" >&2
     exit 1
 fi
 
