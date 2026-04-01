@@ -22,6 +22,11 @@ DOWNLOAD_PREFIX="${DOWNLOAD_PREFIX%/$ZIP_NAME}/"
 RELEASE_URL="$(github_release_url_for_env "$ENV_FILE")"
 REPOSITORY_URL="$(github_repository_url_for_env "$ENV_FILE")"
 
+if ! update_site_generation_ready; then
+    echo "[*] Skipping appcast generation; Sparkle update feeds require distribution signing unless explicitly overridden."
+    exit 0
+fi
+
 if [[ ! -x "$APPCAST_BIN" ]]; then
     echo "Sparkle generate_appcast tool not found: $APPCAST_BIN" >&2
     exit 1

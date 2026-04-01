@@ -51,6 +51,7 @@ ARCHIVE_DIR="$TMP_DIR/archive"
 MECHA_UPDATE_SITE_DIR="$SITE_DIR" \
 MECHA_UPDATE_ARCHIVE_DIR="$ARCHIVE_DIR" \
 MECHA_UPDATE_ZIP_PATH="$ZIP_PATH" \
+MECHA_ALLOW_UNSIGNED_APPCAST=1 \
 bash "$ROOT_DIR/scripts/generate_update_site.sh" "$ENV_FILE"
 
 if [[ ! -f "$SITE_DIR/appcast.xml" ]]; then

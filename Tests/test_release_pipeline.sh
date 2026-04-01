@@ -133,6 +133,25 @@ if distribution_signing_ready; then
     exit 1
 fi
 
+if update_site_generation_ready; then
+    echo "Update site generation should be disabled by default for ad-hoc internal releases" >&2
+    exit 1
+fi
+
+MECHA_ALLOW_UNSIGNED_APPCAST=1
+if ! update_site_generation_ready; then
+    echo "Unsigned appcast generation should be allowed when explicitly enabled" >&2
+    exit 1
+fi
+
+unset MECHA_ALLOW_UNSIGNED_APPCAST || true
+MECHA_SKIP_UPDATE_SITE=1
+if update_site_generation_ready; then
+    echo "Update site generation should stay disabled when explicitly skipped" >&2
+    exit 1
+fi
+
+unset MECHA_SKIP_UPDATE_SITE || true
 MECHA_SIGN_IDENTITY="Developer ID Application: Example Corp (ABCD123456)"
 MECHA_SIGN_CERT_P12_BASE64="ZmFrZS1jZXJ0"
 MECHA_SIGN_CERT_PASSWORD="secret"
@@ -148,6 +167,11 @@ fi
 
 if ! distribution_signing_ready; then
     echo "Distribution signing should be ready when identity is set" >&2
+    exit 1
+fi
+
+if ! update_site_generation_ready; then
+    echo "Update site generation should be enabled for distribution-signed releases" >&2
     exit 1
 fi
 

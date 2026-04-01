@@ -149,6 +149,18 @@ distribution_signing_ready() {
     [[ "$(resolve_signing_mode)" == "developer_id" ]] && [[ -n "${MECHA_SIGN_IDENTITY:-}" ]]
 }
 
+update_site_generation_ready() {
+    if [[ "${MECHA_SKIP_UPDATE_SITE:-0}" == "1" ]]; then
+        return 1
+    fi
+
+    if [[ "${MECHA_ALLOW_UNSIGNED_APPCAST:-0}" == "1" ]]; then
+        return 0
+    fi
+
+    distribution_signing_ready
+}
+
 notarization_ready() {
     distribution_signing_ready && [[ -n "${MECHA_NOTARY_PROFILE:-}" ]]
 }

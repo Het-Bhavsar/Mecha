@@ -75,6 +75,16 @@ jobs:
             echo "[*] Apple notarization secrets are not configured; skipping notarization for internal usage."
           fi
 
+          if update_site_generation_ready; then
+            echo "update_site_enabled=true" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SKIP_UPDATE_SITE=0" >> "$GITHUB_ENV"
+            echo "[*] Sparkle update feed generation enabled for this release."
+          else
+            echo "update_site_enabled=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SKIP_UPDATE_SITE=1" >> "$GITHUB_ENV"
+            echo "[*] Sparkle update feed generation disabled for this release configuration."
+          fi
+
       - name: Import signing certificate
         if: steps.release_capabilities.outputs.signing_configured == 'true'
         env:
@@ -128,13 +138,16 @@ jobs:
           bash ./release_mecha.sh
 
       - name: Configure Pages
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/appcast-site
 
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/deploy-pages@v4

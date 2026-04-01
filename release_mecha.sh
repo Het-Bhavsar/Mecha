@@ -23,6 +23,7 @@ APP_BUNDLE="$ROOT_DIR/build/$APP_NAME.app"
 ZIP_NAME="$(release_zip_name_for_env "$ENV_FILE")"
 ZIP_PATH="$ROOT_DIR/build/$ZIP_NAME"
 DMG_PATH="$ROOT_DIR/$(dmg_name_for_env "$ENV_FILE")"
+APPCAST_PATH="$ROOT_DIR/docs/appcast-site/appcast.xml"
 
 echo "[*] Creating updater archive..."
 rm -f "$ZIP_PATH"
@@ -55,8 +56,13 @@ if notarization_ready; then
     gatekeeper_assess "$DMG_PATH" open
 fi
 
-echo "[*] Generating update site for GitHub Pages..."
-bash "$ROOT_DIR/scripts/generate_update_site.sh" "$ENV_FILE"
+if update_site_generation_ready; then
+    echo "[*] Generating update site for GitHub Pages..."
+    bash "$ROOT_DIR/scripts/generate_update_site.sh" "$ENV_FILE"
+else
+    echo "[*] Skipping update site generation for this internal release configuration."
+    APPCAST_PATH=""
+fi
 
 if [[ "${MECHA_SKIP_GITHUB_PUBLISH:-0}" == "1" ]]; then
     echo "[*] Skipping GitHub release publishing; local release assets are ready for commit/push."
@@ -69,4 +75,8 @@ echo "[*] Release complete:"
 echo "    App: $APP_BUNDLE"
 echo "    ZIP: $ZIP_PATH"
 echo "    DMG: $DMG_PATH"
-echo "    Appcast: $ROOT_DIR/docs/appcast-site/appcast.xml"
+if [[ -n "$APPCAST_PATH" ]]; then
+    echo "    Appcast: $APPCAST_PATH"
+else
+    echo "    Appcast: skipped"
+fi
