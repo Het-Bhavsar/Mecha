@@ -41,8 +41,16 @@ cp -R "build/$APP_NAME.app" "$STAGING_DIR/"
 echo "[*] Creating Applications symlink..."
 ln -s /Applications "$STAGING_DIR/Applications"
 
-echo "[*] Generating installer background..."
-create_dmg_background "$BACKGROUND_PATH"
+DMG_STYLING_ENABLED=0
+if [[ "${MECHA_SKIP_DMG_STYLING:-0}" == "1" ]]; then
+    echo "[*] Skipping DMG background generation and Finder styling for headless build environment..."
+elif ! dmg_background_dependencies_available; then
+    echo "[*] Pillow is unavailable; building an unstylized DMG."
+else
+    echo "[*] Generating installer background..."
+    create_dmg_background "$BACKGROUND_PATH"
+    DMG_STYLING_ENABLED=1
+fi
 
 echo "[*] Building DMG..."
 rm -f "$DMG_NAME"
@@ -55,9 +63,7 @@ if [[ -d "$MOUNT_DIR" ]]; then
 fi
 hdiutil attach "$TEMP_DMG" -readwrite -noverify -noautoopen -mountpoint "$MOUNT_DIR" >/dev/null
 
-if [[ "${MECHA_SKIP_DMG_STYLING:-0}" == "1" ]]; then
-    echo "[*] Skipping Finder styling for headless build environment..."
-else
+if [[ "$DMG_STYLING_ENABLED" == "1" ]]; then
     echo "[*] Styling Finder window..."
     osascript <<EOF
 tell application "Finder"

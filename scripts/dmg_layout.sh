@@ -21,6 +21,17 @@ DMG_ARROW_HEAD_HALF_HEIGHT=$(( DMG_ICON_SIZE / 5 + 1 ))
 DMG_BACKGROUND_DIR_NAME=".background"
 DMG_BACKGROUND_NAME="dmg-background.png"
 
+dmg_background_dependencies_available() {
+    python3 - <<'PY' >/dev/null 2>&1
+from PIL import Image, ImageDraw, ImageFilter
+PY
+}
+
+should_style_dmg_window() {
+    local dependencies_available="${1:-1}"
+    [[ "${MECHA_SKIP_DMG_STYLING:-0}" != "1" ]] && [[ "$dependencies_available" == "1" ]]
+}
+
 create_dmg_background() {
     local output_path="$1"
     mkdir -p "$(dirname "$output_path")"

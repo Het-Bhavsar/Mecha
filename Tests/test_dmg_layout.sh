@@ -59,4 +59,22 @@ if [[ "$DMG_ARROW_HEAD_HALF_HEIGHT" != "26" ]]; then
     exit 1
 fi
 
+unset MECHA_SKIP_DMG_STYLING || true
+if ! should_style_dmg_window "1"; then
+    echo "DMG styling should remain enabled when headless mode is off and dependencies are present" >&2
+    exit 1
+fi
+
+if should_style_dmg_window "0"; then
+    echo "DMG styling should disable itself when background dependencies are unavailable" >&2
+    exit 1
+fi
+
+MECHA_SKIP_DMG_STYLING=1
+if should_style_dmg_window "1"; then
+    echo "DMG styling should stay disabled in headless mode even when dependencies are present" >&2
+    exit 1
+fi
+unset MECHA_SKIP_DMG_STYLING || true
+
 echo "test_dmg_layout.sh: PASS"
