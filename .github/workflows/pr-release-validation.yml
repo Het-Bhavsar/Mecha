@@ -1,0 +1,32 @@
+name: PR Release Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" --force
+
+      - name: Validate release metadata and version change
+        run: |
+          bash ./scripts/validate_release_metadata.sh --require-version-change-from "origin/${{ github.base_ref }}"
+
+      - name: Run release helper tests
+        run: |
+          bash ./Tests/test_release_pipeline.sh
+          bash ./Tests/test_release_metadata_validation.sh
+          bash ./Tests/test_update_site.sh

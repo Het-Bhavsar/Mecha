@@ -1,12 +1,6 @@
-name: Publish Update Feed
+name: Redeploy Update Feed
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - docs/appcast-site/**
-      - .github/workflows/publish-pages.yml
   workflow_dispatch:
 
 permissions:

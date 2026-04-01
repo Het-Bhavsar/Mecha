@@ -11,6 +11,7 @@ source "$ROOT_DIR/scripts/versioning.sh"
 # shellcheck disable=SC1091
 source "$ROOT_DIR/scripts/release_common.sh"
 
+bash "$ROOT_DIR/scripts/validate_release_metadata.sh"
 load_version_env "$ENV_FILE"
 
 SIGNING_MODE="$(resolve_signing_mode)"

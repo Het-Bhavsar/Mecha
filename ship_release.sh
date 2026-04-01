@@ -22,6 +22,14 @@ if ! command -v gh >/dev/null 2>&1; then
     exit 1
 fi
 
+if [[ "${MECHA_PREPARE_RELEASE_VERSION:-1}" == "1" ]]; then
+    echo "[*] Preparing next release version metadata..."
+    bash "$ROOT_DIR/scripts/prepare_release_version.sh"
+else
+    echo "[*] Using existing release version metadata..."
+    bash "$ROOT_DIR/scripts/validate_release_metadata.sh"
+fi
+
 echo "[*] Preparing release assets locally..."
 MECHA_SKIP_GITHUB_PUBLISH=1 bash "$ROOT_DIR/release_mecha.sh"
 load_version_env "$ENV_FILE"

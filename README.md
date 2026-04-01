@@ -49,7 +49,13 @@ bash ./build_mecha.sh
 open ./build/Mecha.app
 ```
 
-Each build bumps the patch version and build number through [`version.env`](./version.env) and [`scripts/versioning.sh`](./scripts/versioning.sh).
+`build_mecha.sh` now builds the exact version already present in [`version.env`](./version.env).
+
+To prepare the next release version locally before a manual release:
+
+```bash
+bash ./scripts/prepare_release_version.sh
+```
 
 ## Create A DMG
 
@@ -66,19 +72,49 @@ Mecha now supports Sparkle-based updates for existing installs using:
 - a versioned `.zip` for in-app updates
 - a `.dmg` for first-time manual installs
 
-To publish an updater-aware release:
+The release path is now merge-driven:
+
+1. open a PR against `main`
+2. update the release version metadata in the PR
+3. let `PR Release Validation` confirm the branch is releaseable
+4. merge to `main`
+5. let `Release On Main` build, sign, notarize, publish the GitHub release, and deploy the update feed
+
+The `main` workflow publishes the exact `APP_VERSION` and `BUILD_NUMBER` already committed in the merged PR. It does not auto-bump versions in CI.
+
+For manual local releases, the old path still exists:
 
 ```bash
-bash ./release_mecha.sh
+bash ./ship_release.sh
 ```
 
-That release flow:
+That path prepares the next patch version locally, builds the app, creates both release assets, pushes the release commit, and publishes the GitHub release.
 
-1. builds `Mecha.app`
-2. creates the updater `.zip`
-3. creates the installer `.dmg`
-4. uploads both assets to GitHub Releases
-5. regenerates the GitHub Pages appcast in `docs/appcast-site/`
+### Required GitHub Secrets
+
+`Release On Main` expects these repository secrets:
+
+- `MECHA_SIGN_CERT_P12_BASE64`
+- `MECHA_SIGN_CERT_PASSWORD`
+- `MECHA_SIGN_IDENTITY`
+- `MECHA_NOTARY_APPLE_ID`
+- `MECHA_NOTARY_TEAM_ID`
+- `MECHA_NOTARY_APP_PASSWORD`
+
+### Local Sync
+
+GitHub is now the source of truth for `main`, release tags, and GitHub Releases. After a merge or release, sync a local clone with:
+
+```bash
+bash ./sync_repo.sh
+```
+
+That is equivalent to:
+
+```bash
+git checkout main
+git pull --ff-only --tags
+```
 
 The first updater-enabled build still needs to be installed manually once. After that, users can use `Check for Updates` from the menu or settings, and Mecha can also poll the feed automatically.
 

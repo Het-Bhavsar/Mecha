@@ -42,6 +42,68 @@ if [[ "$(appcast_feed_url_for_env "$ENV_FILE")" != "https://het-bhavsar.github.i
     exit 1
 fi
 
+if grep -Fq "bump_patch_version" "$ROOT_DIR/build_mecha.sh"; then
+    echo "build_mecha.sh should not bump versions implicitly" >&2
+    exit 1
+fi
+
+TMP_PREP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR" "$TMP_PREP_DIR"' EXIT
+
+PREP_ENV_FILE="$TMP_PREP_DIR/version.env"
+PREP_PLIST_FILE="$TMP_PREP_DIR/Info.plist"
+PREP_PROJECT_YML="$TMP_PREP_DIR/project.yml"
+PREP_PBXPROJ_FILE="$TMP_PREP_DIR/project.pbxproj"
+
+cat > "$PREP_ENV_FILE" <<'EOF'
+APP_NAME=Mecha
+APP_VERSION=1.2.3
+BUILD_NUMBER=10
+EOF
+
+cat > "$PREP_PLIST_FILE" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleVersion</key>
+    <string>10</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.2.3</string>
+</dict>
+</plist>
+EOF
+
+cat > "$PREP_PROJECT_YML" <<'EOF'
+settings:
+  base:
+    CURRENT_PROJECT_VERSION: 10
+    MARKETING_VERSION: 1.2.3
+EOF
+
+cat > "$PREP_PBXPROJ_FILE" <<'EOF'
+CURRENT_PROJECT_VERSION = 10;
+MARKETING_VERSION = 1.2.3;
+EOF
+
+bash "$ROOT_DIR/scripts/prepare_release_version.sh" \
+    "$PREP_ENV_FILE" \
+    "$PREP_PLIST_FILE" \
+    "$PREP_PROJECT_YML" \
+    "$PREP_PBXPROJ_FILE"
+
+source "$PREP_ENV_FILE"
+
+if [[ "$APP_VERSION" != "1.2.4" ]]; then
+    echo "Expected prepare_release_version.sh to bump APP_VERSION to 1.2.4" >&2
+    exit 1
+fi
+
+if [[ "$BUILD_NUMBER" != "11" ]]; then
+    echo "Expected prepare_release_version.sh to bump BUILD_NUMBER to 11" >&2
+    exit 1
+fi
+
 unset MECHA_SIGN_MODE || true
 unset MECHA_SIGN_IDENTITY || true
 unset MECHA_NOTARY_PROFILE || true

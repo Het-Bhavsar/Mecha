@@ -11,8 +11,7 @@ source "$ROOT_DIR/scripts/versioning.sh"
 # shellcheck disable=SC1091
 source "$ROOT_DIR/scripts/release_common.sh"
 
-bump_patch_version "$ENV_FILE"
-sync_version_metadata \
+bash "$ROOT_DIR/scripts/validate_release_metadata.sh" \
     "$ENV_FILE" \
     "$ROOT_DIR/Mecha/Info.plist" \
     "$ROOT_DIR/project.yml" \

@@ -55,8 +55,11 @@ if [[ -d "$MOUNT_DIR" ]]; then
 fi
 hdiutil attach "$TEMP_DMG" -readwrite -noverify -noautoopen -mountpoint "$MOUNT_DIR" >/dev/null
 
-echo "[*] Styling Finder window..."
-osascript <<EOF
+if [[ "${MECHA_SKIP_DMG_STYLING:-0}" == "1" ]]; then
+    echo "[*] Skipping Finder styling for headless build environment..."
+else
+    echo "[*] Styling Finder window..."
+    osascript <<EOF
 tell application "Finder"
     tell disk "$APP_NAME"
         open
@@ -78,6 +81,7 @@ tell application "Finder"
     end tell
 end tell
 EOF
+fi
 
 sync
 hdiutil detach "$MOUNT_DIR" >/dev/null
