@@ -146,6 +146,8 @@ jobs:
             --password "$MECHA_NOTARY_APP_PASSWORD"
 
       - name: Build and publish release
+        env:
+          MECHA_SPARKLE_PRIVATE_KEY: ${{ secrets.MECHA_SPARKLE_PRIVATE_KEY }}
         run: |
           bash ./release_mecha.sh
 

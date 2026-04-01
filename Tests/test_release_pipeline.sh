@@ -57,6 +57,16 @@ if ! grep -Fq 'ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_PATH
     exit 1
 fi
 
+if ! grep -Fq 'MECHA_SPARKLE_PRIVATE_KEY: ${{ secrets.MECHA_SPARKLE_PRIVATE_KEY }}' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should pass the Sparkle private key secret into the release step" >&2
+    exit 1
+fi
+
+if ! grep -Fq -- '--ed-key-file -' "$ROOT_DIR/scripts/generate_update_site.sh"; then
+    echo "generate_update_site.sh should support Sparkle private keys supplied from CI secrets" >&2
+    exit 1
+fi
+
 TMP_PREP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR" "$TMP_PREP_DIR"' EXIT
 

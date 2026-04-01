@@ -48,15 +48,22 @@ fi
 cp "$ZIP_PATH" "$ARCHIVE_DIR/$ZIP_NAME"
 
 echo "[*] Generating appcast..."
-"$APPCAST_BIN" \
-    --account "$(sparkle_key_account)" \
-    --download-url-prefix "$DOWNLOAD_PREFIX" \
-    --link "$REPOSITORY_URL" \
-    --full-release-notes-url "$RELEASE_URL" \
-    --maximum-deltas 0 \
-    --maximum-versions 6 \
-    -o "$ARCHIVE_DIR/appcast.xml" \
+APPCAST_ARGS=(
+    --account "$(sparkle_key_account)"
+    --download-url-prefix "$DOWNLOAD_PREFIX"
+    --link "$REPOSITORY_URL"
+    --full-release-notes-url "$RELEASE_URL"
+    --maximum-deltas 0
+    --maximum-versions 6
+    -o "$ARCHIVE_DIR/appcast.xml"
     "$ARCHIVE_DIR"
+)
+
+if [[ -n "${MECHA_SPARKLE_PRIVATE_KEY:-}" ]]; then
+    printf '%s' "$MECHA_SPARKLE_PRIVATE_KEY" | "$APPCAST_BIN" --ed-key-file - "${APPCAST_ARGS[@]}"
+else
+    "$APPCAST_BIN" "${APPCAST_ARGS[@]}"
+fi
 
 rm -f "$ARCHIVE_DIR/$ZIP_NAME"
 
