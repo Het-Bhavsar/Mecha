@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ServiceManagement
+import CoreAudio
 
 private enum SettingsTab: String, Hashable {
     case performance = "Performance"
@@ -124,6 +125,7 @@ struct SettingsView: View {
         .settingsWindowChrome()
         .frame(minWidth: 880, minHeight: 560)
         .onAppear {
+            audioManager.refreshOutputDevices()
             statsManager.refreshIfNeeded()
             updateManager.refreshFeedAvailabilityIfNeeded()
         }
@@ -199,6 +201,39 @@ struct SettingsView: View {
                     Toggle("", isOn: $audioManager.isMuted)
                         .toggleStyle(.switch)
                         .labelsHidden()
+                }
+
+                cardDivider
+
+                settingRow(
+                    title: "Output device",
+                    subtitle: "Direct the engine to a specific hardware output or follow system defaults."
+                ) {
+                    HStack(spacing: 8) {
+                        Picker("", selection: $audioManager.selectedDeviceID) {
+                            Text("System Default").tag(AudioDeviceID?.none)
+                            ForEach(audioManager.availableOutputDevices) { device in
+                                Text(device.name).tag(AudioDeviceID?.some(device.id))
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(minWidth: 160)
+
+                        Button(action: { audioManager.refreshOutputDevices() }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(secondaryText)
+                                .frame(width: 24, height: 24)
+                                .background(cardSurface(highlight: tileBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .stroke(separatorColor, lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .help("Refresh available devices")
+                    }
                 }
 
                 cardDivider

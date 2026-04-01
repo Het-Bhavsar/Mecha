@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreAudio
 
 struct MenuView: View {
     @ObservedObject var eventManager: EventTapManager
@@ -193,6 +194,18 @@ struct MenuView: View {
                 .cornerRadius(8)
                 
                 VStack(alignment: .leading, spacing: 4) {
+                    Text("Sound Output").font(.system(size: 9, weight: .bold)).foregroundColor(.secondary)
+                    Picker("", selection: $audioManager.selectedDeviceID) {
+                        Text("System Default").tag(AudioDeviceID?.none)
+                        ForEach(audioManager.availableOutputDevices) { device in
+                            Text(device.name).tag(AudioDeviceID?.some(device.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Sound Pack").font(.system(size: 9, weight: .bold)).foregroundColor(.secondary)
                     Picker("", selection: $soundPackManager.activePackName) {
                         ForEach(soundPackManager.installedPackVariants) { pack in
@@ -267,6 +280,7 @@ struct MenuView: View {
         .padding()
         .frame(width: 320)
         .onAppear {
+            audioManager.refreshOutputDevices()
             eventManager.checkTrust()
             statsManager.refreshIfNeeded()
             updateManager.refreshFeedAvailabilityIfNeeded()
