@@ -47,6 +47,16 @@ if grep -Fq "bump_patch_version" "$ROOT_DIR/build_mecha.sh"; then
     exit 1
 fi
 
+if ! grep -Fq 'sign_embedded_sparkle_framework "$FRAMEWORKS_DIR/Sparkle.framework"' "$ROOT_DIR/build_mecha.sh"; then
+    echo "build_mecha.sh should re-sign the embedded Sparkle framework for release builds" >&2
+    exit 1
+fi
+
+if ! grep -Fq 'ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_PATH"' "$ROOT_DIR/release_mecha.sh"; then
+    echo "release_mecha.sh should create update archives with Sparkle-compatible ditto flags" >&2
+    exit 1
+fi
+
 TMP_PREP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR" "$TMP_PREP_DIR"' EXIT
 

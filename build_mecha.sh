@@ -60,6 +60,11 @@ swiftc -sdk $(xcrun --show-sdk-path --sdk macosx) \
     -o "$CONTENTS/MacOS/$APP_NAME"
 
 SIGNING_MODE="$(resolve_signing_mode)"
+if [ -d "$FRAMEWORKS_DIR/Sparkle.framework" ]; then
+    echo "[*] Re-signing embedded Sparkle helpers ($SIGNING_MODE)..."
+    sign_embedded_sparkle_framework "$FRAMEWORKS_DIR/Sparkle.framework"
+fi
+
 echo "[*] Signing Mecha ($SIGNING_MODE)..."
 codesign_bundle "$APP_BUNDLE" "$ROOT_DIR/Mecha.entitlements" "$BUNDLE_ID"
 

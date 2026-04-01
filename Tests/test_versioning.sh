@@ -72,4 +72,64 @@ if [[ "$DMG_NAME" != "Mecha_v3.0.1.dmg" ]]; then
     exit 1
 fi
 
+INTERNAL_ENV_FILE="$TMP_DIR/internal-version.env"
+INTERNAL_PLIST_FILE="$TMP_DIR/internal-Info.plist"
+INTERNAL_PROJECT_YML="$TMP_DIR/internal-project.yml"
+INTERNAL_PBXPROJ_FILE="$TMP_DIR/internal-project.pbxproj"
+
+cat > "$INTERNAL_ENV_FILE" <<'EOF'
+APP_NAME=Mecha
+BUNDLE_ID=com.hetbhavsar.Mecha
+APP_VERSION=3.0.36
+BUILD_NUMBER=37
+EOF
+
+cat > "$INTERNAL_PLIST_FILE" <<'EOF'
+<plist version="1.0">
+<dict>
+    <key>CFBundleVersion</key>
+    <string>37</string>
+    <key>CFBundleShortVersionString</key>
+    <string>3.0.36</string>
+</dict>
+</plist>
+EOF
+
+cat > "$INTERNAL_PROJECT_YML" <<'EOF'
+settings:
+  CURRENT_PROJECT_VERSION: 37
+  MARKETING_VERSION: 3.0.36
+EOF
+
+cat > "$INTERNAL_PBXPROJ_FILE" <<'EOF'
+CURRENT_PROJECT_VERSION = 37;
+MARKETING_VERSION = 3.0.36;
+EOF
+
+MECHA_INTERNAL_BUILD_NUMBER=128 bash "$ROOT_DIR/scripts/prepare_internal_release_version.sh" \
+    "$INTERNAL_ENV_FILE" \
+    "$INTERNAL_PLIST_FILE" \
+    "$INTERNAL_PROJECT_YML" \
+    "$INTERNAL_PBXPROJ_FILE"
+
+# shellcheck disable=SC1090
+source "$INTERNAL_ENV_FILE"
+
+if [[ "$APP_VERSION" != "3.0.36" ]]; then
+    echo "Expected internal release preparation to keep APP_VERSION=3.0.36, got $APP_VERSION" >&2
+    exit 1
+fi
+
+if [[ "$BUILD_NUMBER" != "128" ]]; then
+    echo "Expected internal release preparation to set BUILD_NUMBER=128, got $BUILD_NUMBER" >&2
+    exit 1
+fi
+
+grep -q '<string>128</string>' "$INTERNAL_PLIST_FILE"
+grep -q '<string>3.0.36</string>' "$INTERNAL_PLIST_FILE"
+grep -q 'CURRENT_PROJECT_VERSION: 128' "$INTERNAL_PROJECT_YML"
+grep -q 'MARKETING_VERSION: 3.0.36' "$INTERNAL_PROJECT_YML"
+grep -q 'CURRENT_PROJECT_VERSION = 128;' "$INTERNAL_PBXPROJ_FILE"
+grep -q 'MARKETING_VERSION = 3.0.36;' "$INTERNAL_PBXPROJ_FILE"
+
 echo "test_versioning.sh: PASS"

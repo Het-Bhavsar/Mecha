@@ -255,6 +255,64 @@ sign_disk_image() {
         "$dmg_path"
 }
 
+sign_embedded_sparkle_framework() {
+    local framework_path="$1"
+    local current_path installer_path downloader_path autoupdate_path updater_app_path
+    local mode
+
+    [[ -d "$framework_path" ]] || return 0
+
+    mode="$(resolve_signing_mode)"
+    current_path="$framework_path/Versions/Current"
+    installer_path="$current_path/XPCServices/Installer.xpc"
+    downloader_path="$current_path/XPCServices/Downloader.xpc"
+    autoupdate_path="$current_path/Autoupdate"
+    updater_app_path="$current_path/Updater.app"
+
+    if [[ "$mode" == "developer_id" ]] && ! signing_identity_available; then
+        echo "Developer ID identity not found in keychain: ${MECHA_SIGN_IDENTITY:-<unset>}" >&2
+        return 1
+    fi
+
+    if [[ -e "$installer_path" ]]; then
+        if [[ "$mode" == "developer_id" ]]; then
+            codesign --force --sign "$MECHA_SIGN_IDENTITY" --timestamp --options runtime "$installer_path"
+        else
+            codesign --force --sign - "$installer_path"
+        fi
+    fi
+
+    if [[ -e "$downloader_path" ]]; then
+        if [[ "$mode" == "developer_id" ]]; then
+            codesign --force --sign "$MECHA_SIGN_IDENTITY" --timestamp --options runtime --preserve-metadata=entitlements "$downloader_path"
+        else
+            codesign --force --sign - --preserve-metadata=entitlements "$downloader_path"
+        fi
+    fi
+
+    if [[ -e "$autoupdate_path" ]]; then
+        if [[ "$mode" == "developer_id" ]]; then
+            codesign --force --sign "$MECHA_SIGN_IDENTITY" --timestamp --options runtime "$autoupdate_path"
+        else
+            codesign --force --sign - "$autoupdate_path"
+        fi
+    fi
+
+    if [[ -e "$updater_app_path" ]]; then
+        if [[ "$mode" == "developer_id" ]]; then
+            codesign --force --sign "$MECHA_SIGN_IDENTITY" --timestamp --options runtime "$updater_app_path"
+        else
+            codesign --force --sign - "$updater_app_path"
+        fi
+    fi
+
+    if [[ "$mode" == "developer_id" ]]; then
+        codesign --force --sign "$MECHA_SIGN_IDENTITY" --timestamp --options runtime "$framework_path"
+    else
+        codesign --force --sign - "$framework_path"
+    fi
+}
+
 notarize_file() {
     local file_path="$1"
     assert_notarization_ready

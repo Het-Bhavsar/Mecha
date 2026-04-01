@@ -51,8 +51,10 @@ jobs:
           source ./scripts/release_common.sh
 
           if signing_secrets_ready; then
+            MECHA_ALLOW_UNSIGNED_APPCAST=0
             echo "signing_configured=true" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=developer_id" >> "$GITHUB_ENV"
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=0" >> "$GITHUB_ENV"
             {
               echo "MECHA_SIGN_IDENTITY<<EOF"
               echo "$MECHA_SIGN_IDENTITY"
@@ -60,10 +62,12 @@ jobs:
             } >> "$GITHUB_ENV"
             echo "[*] Developer ID signing enabled for this release."
           else
+            MECHA_ALLOW_UNSIGNED_APPCAST=1
             echo "signing_configured=false" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=adhoc" >> "$GITHUB_ENV"
             echo "MECHA_SIGN_IDENTITY=" >> "$GITHUB_ENV"
-            echo "[*] Signing secrets are not configured; publishing internal-evaluation assets with ad-hoc signing."
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=1" >> "$GITHUB_ENV"
+            echo "[*] Signing secrets are not configured; publishing internal-evaluation assets with ad-hoc signing and an unsigned internal appcast."
           fi
 
           if notarization_secrets_ready; then
@@ -85,6 +89,13 @@ jobs:
             echo "MECHA_SKIP_UPDATE_SITE=1" >> "$GITHUB_ENV"
             echo "[*] Sparkle update feed generation disabled for this release configuration."
           fi
+
+      - name: Prepare internal release metadata
+        if: steps.release_capabilities.outputs.signing_configured != 'true'
+        env:
+          MECHA_INTERNAL_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          bash ./scripts/prepare_internal_release_version.sh
 
       - name: Import signing certificate
         if: steps.release_capabilities.outputs.signing_configured == 'true'

@@ -44,6 +44,18 @@ bump_patch_version() {
     persist_env_value "$env_file" "BUILD_NUMBER" "$BUILD_NUMBER"
 }
 
+set_build_number() {
+    local env_file="$1"
+    local build_number="$2"
+
+    if [[ -z "$build_number" || ! "$build_number" =~ ^[0-9]+$ ]]; then
+        echo "Invalid BUILD_NUMBER: $build_number" >&2
+        return 1
+    fi
+
+    persist_env_value "$env_file" "BUILD_NUMBER" "$build_number"
+}
+
 sync_version_metadata() {
     local env_file="$1"
     local plist_file="$2"

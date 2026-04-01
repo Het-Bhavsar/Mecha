@@ -27,7 +27,7 @@ APPCAST_PATH="$ROOT_DIR/docs/appcast-site/appcast.xml"
 
 echo "[*] Creating updater archive..."
 rm -f "$ZIP_PATH"
-ditto -c -k --keepParent "$APP_BUNDLE" "$ZIP_PATH"
+ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_PATH"
 
 if notarization_ready; then
     echo "[*] Notarizing app archive..."
