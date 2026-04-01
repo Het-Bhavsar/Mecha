@@ -49,6 +49,43 @@ struct AudioEnginePreferenceTests {
         expect(fallbackFormat.sampleRate == 44100 && fallbackFormat.channelCount == 2, "Invalid hardware formats should fall back to 44.1kHz stereo")
         let preservedFormat = AudioEngineManager.normalizedPlaybackFormatValues(sampleRate: 48000, channelCount: 2)
         expect(preservedFormat.sampleRate == 48000 && preservedFormat.channelCount == 2, "Valid hardware formats should be preserved")
+        expect(
+            AudioEngineManager.resolvedOutputTargetDeviceID(
+                explicitSelection: nil,
+                systemDefaultDeviceID: 83
+            ) == 83,
+            "System default mode should target the current macOS default device"
+        )
+        expect(
+            AudioEngineManager.shouldRefreshSystemDefaultBinding(
+                explicitSelection: nil,
+                previouslyAppliedDeviceID: 83,
+                newSystemDefaultDeviceID: 50
+            ) == true,
+            "System default mode should rebind when the macOS default output changes"
+        )
+        expect(
+            AudioEngineManager.shouldRefreshSystemDefaultBinding(
+                explicitSelection: 83,
+                previouslyAppliedDeviceID: 83,
+                newSystemDefaultDeviceID: 50
+            ) == false,
+            "Explicit output selections should not be replaced by a later system default change"
+        )
+        expect(
+            AudioEngineManager.shouldResetSelection(
+                selectedDeviceID: 99,
+                availableDeviceIDs: [50, 83]
+            ) == true,
+            "Unavailable stored output selections should fall back to system default"
+        )
+        expect(
+            AudioEngineManager.shouldResetSelection(
+                selectedDeviceID: 83,
+                availableDeviceIDs: [50, 83]
+            ) == false,
+            "Available explicit output selections should be preserved"
+        )
 
         defaults.removePersistentDomain(forName: suiteName)
     }

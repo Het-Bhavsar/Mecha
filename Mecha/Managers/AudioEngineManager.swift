@@ -73,7 +73,15 @@ class AudioEngineManager: ObservableObject {
     @Published var selectedDeviceID: AudioDeviceID? {
         didSet {
             UserDefaults.standard.set(selectedDeviceID.map { Int($0) } ?? -1, forKey: Self.selectedDeviceIDKey)
-            applyOutputDevice(id: selectedDeviceID)
+            guard applyOutputDevice(id: selectedDeviceID) else {
+                guard selectedDeviceID != nil else {
+                    return
+                }
+
+                print("[AudioEngineManager] Failed to apply selected output device. Falling back to system default.")
+                selectedDeviceID = nil
+                return
+            }
         }
     }
     
@@ -91,6 +99,9 @@ class AudioEngineManager: ObservableObject {
     private var packPitchJitterCents: Float = 0
     private var packTimingJitterMs: Float = 0
     private var packReleaseBlend: Float = 0
+    private var appliedDeviceID: AudioDeviceID?
+    private var observedSystemDefaultDeviceID: AudioDeviceID?
+    private var hardwareChangeListener: AudioObjectPropertyListenerBlock?
     
     @Published var masterVolume: Float = 0.8 {
         didSet {
@@ -281,6 +292,63 @@ class AudioEngineManager: ObservableObject {
         return PlaybackFormatValues(sampleRate: resolvedSampleRate, channelCount: resolvedChannelCount)
     }
 
+    static func resolvedStoredOutputDeviceID(from storedValue: Int) -> AudioDeviceID? {
+        storedValue > 0 ? AudioDeviceID(storedValue) : nil
+    }
+
+    static func resolvedOutputTargetDeviceID(
+        explicitSelection: AudioDeviceID?,
+        systemDefaultDeviceID: AudioDeviceID?
+    ) -> AudioDeviceID? {
+        explicitSelection ?? systemDefaultDeviceID
+    }
+
+    static func shouldRefreshSystemDefaultBinding(
+        explicitSelection: AudioDeviceID?,
+        previouslyAppliedDeviceID: AudioDeviceID?,
+        newSystemDefaultDeviceID: AudioDeviceID?
+    ) -> Bool {
+        guard explicitSelection == nil, let newSystemDefaultDeviceID else {
+            return false
+        }
+
+        return previouslyAppliedDeviceID != newSystemDefaultDeviceID
+    }
+
+    static func shouldResetSelection(
+        selectedDeviceID: AudioDeviceID?,
+        availableDeviceIDs: [AudioDeviceID]
+    ) -> Bool {
+        guard let selectedDeviceID else {
+            return false
+        }
+
+        return !availableDeviceIDs.contains(selectedDeviceID)
+    }
+
+    static func currentSystemDefaultOutputDeviceID() -> AudioDeviceID? {
+        var defaultOutputDeviceID: AudioDeviceID = 0
+        var defaultPropertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var defaultDataSize = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &defaultPropertyAddress,
+            0,
+            nil,
+            &defaultDataSize,
+            &defaultOutputDeviceID
+        )
+        guard status == noErr, defaultOutputDeviceID != 0 else {
+            return nil
+        }
+
+        return defaultOutputDeviceID
+    }
+
     static func getAvailableOutputDevices() -> [AudioDevice] {
         var propertyAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDevices,
@@ -341,40 +409,45 @@ class AudioEngineManager: ObservableObject {
     func refreshOutputDevices() {
         let devices = Self.getAvailableOutputDevices()
         self.availableOutputDevices = devices
+        observedSystemDefaultDeviceID = Self.currentSystemDefaultOutputDeviceID()
         
         // Ensure selectedDeviceID is still valid
-        if let currentID = selectedDeviceID, !devices.contains(where: { $0.id == currentID }) {
+        if Self.shouldResetSelection(
+            selectedDeviceID: selectedDeviceID,
+            availableDeviceIDs: devices.map(\.id)
+        ) {
             self.selectedDeviceID = nil
         }
     }
 
-    private func applyOutputDevice(id: AudioDeviceID?) {
+    @discardableResult
+    private func applyOutputDevice(id: AudioDeviceID?) -> Bool {
         let wasRunning = engine.isRunning
         if wasRunning {
             engine.pause()
         }
         
         let outputNode = engine.outputNode
-        guard let audioUnit = outputNode.audioUnit else { return }
-
-        var deviceID: AudioDeviceID
-        if let id = id {
-            deviceID = id
-        } else {
-            // Get the current system default output device ID
-            var defaultOutputDeviceID: AudioDeviceID = 0
-            var defaultPropertyAddress = AudioObjectPropertyAddress(
-                mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            var defaultDataSize = UInt32(MemoryLayout<AudioDeviceID>.size)
-            let status = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &defaultPropertyAddress, 0, nil, &defaultDataSize, &defaultOutputDeviceID)
-            guard status == noErr else { return }
-            deviceID = defaultOutputDeviceID
+        guard let audioUnit = outputNode.audioUnit else {
+            print("[AudioEngineManager] Output node is missing its audio unit.")
+            return false
         }
 
-        AudioUnitSetProperty(
+        let targetDeviceID = Self.resolvedOutputTargetDeviceID(
+            explicitSelection: id,
+            systemDefaultDeviceID: observedSystemDefaultDeviceID ?? Self.currentSystemDefaultOutputDeviceID()
+        )
+
+        guard var deviceID = targetDeviceID else {
+            appliedDeviceID = nil
+            reconfigurePlaybackFormatIfNeeded()
+            if wasRunning {
+                try? engine.start()
+            }
+            return true
+        }
+
+        let status = AudioUnitSetProperty(
             audioUnit,
             kAudioOutputUnitProperty_CurrentDevice,
             kAudioUnitScope_Global,
@@ -382,12 +455,115 @@ class AudioEngineManager: ObservableObject {
             &deviceID,
             UInt32(MemoryLayout<AudioDeviceID>.size)
         )
+        guard status == noErr else {
+            print("[AudioEngineManager] Failed to set output device \(deviceID): \(status)")
+            if wasRunning {
+                try? engine.start()
+            }
+            return false
+        }
         
+        appliedDeviceID = deviceID
         reconfigurePlaybackFormatIfNeeded()
         
         if wasRunning {
             try? engine.start()
         }
+
+        return true
+    }
+
+    private func handleObservedOutputHardwareChange() {
+        let previousSelection = selectedDeviceID
+        let previousAppliedDeviceID = appliedDeviceID
+        let newSystemDefaultDeviceID = Self.currentSystemDefaultOutputDeviceID()
+        observedSystemDefaultDeviceID = newSystemDefaultDeviceID
+
+        refreshOutputDevices()
+
+        guard selectedDeviceID == previousSelection else {
+            return
+        }
+
+        guard Self.shouldRefreshSystemDefaultBinding(
+            explicitSelection: selectedDeviceID,
+            previouslyAppliedDeviceID: previousAppliedDeviceID,
+            newSystemDefaultDeviceID: newSystemDefaultDeviceID
+        ) else {
+            return
+        }
+
+        _ = applyOutputDevice(id: nil)
+    }
+
+    private func observeOutputHardwareChanges() {
+        guard hardwareChangeListener == nil else {
+            return
+        }
+
+        let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            self?.handleObservedOutputHardwareChange()
+        }
+
+        let systemObject = AudioObjectID(kAudioObjectSystemObject)
+        var defaultPropertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var devicesPropertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let defaultStatus = AudioObjectAddPropertyListenerBlock(
+            systemObject,
+            &defaultPropertyAddress,
+            .main,
+            listener
+        )
+        let devicesStatus = AudioObjectAddPropertyListenerBlock(
+            systemObject,
+            &devicesPropertyAddress,
+            .main,
+            listener
+        )
+
+        guard defaultStatus == noErr, devicesStatus == noErr else {
+            if defaultStatus == noErr {
+                AudioObjectRemovePropertyListenerBlock(systemObject, &defaultPropertyAddress, .main, listener)
+            }
+            if devicesStatus == noErr {
+                AudioObjectRemovePropertyListenerBlock(systemObject, &devicesPropertyAddress, .main, listener)
+            }
+            print("[AudioEngineManager] Failed to observe audio hardware changes: default=\(defaultStatus) devices=\(devicesStatus)")
+            return
+        }
+
+        hardwareChangeListener = listener
+    }
+
+    private func stopObservingOutputHardwareChanges() {
+        guard let hardwareChangeListener else {
+            return
+        }
+
+        let systemObject = AudioObjectID(kAudioObjectSystemObject)
+        var defaultPropertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var devicesPropertyAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectRemovePropertyListenerBlock(systemObject, &defaultPropertyAddress, .main, hardwareChangeListener)
+        AudioObjectRemovePropertyListenerBlock(systemObject, &devicesPropertyAddress, .main, hardwareChangeListener)
+        self.hardwareChangeListener = nil
     }
 
     func updateRenderingProfile(
@@ -415,16 +591,11 @@ class AudioEngineManager: ObservableObject {
         self.isMuted = Self.resolvedMuteState()
         self.performanceMode = Self.resolvedPerformanceMode()
         
-        // Restore Output Device
-        let savedDeviceID = UserDefaults.standard.integer(forKey: Self.selectedDeviceIDKey)
-        if savedDeviceID > 0 {
-            self.selectedDeviceID = AudioDeviceID(savedDeviceID)
-        }
-        
         self.mixer.volume = Self.effectiveMixerVolume(masterVolume: masterVolume, isMuted: isMuted)
         
         // Refresh devices
         refreshOutputDevices()
+        observeOutputHardwareChanges()
         
         // Restore Mechanical Tuning
         self.pitchJitterRange = UserDefaults.standard.object(forKey: "PitchJitter") as? Float ?? 0.02
@@ -439,6 +610,12 @@ class AudioEngineManager: ObservableObject {
         
         setupEngine()
         applyPerformanceMode()
+
+        if let savedDeviceID = Self.resolvedStoredOutputDeviceID(
+            from: UserDefaults.standard.integer(forKey: Self.selectedDeviceIDKey)
+        ) {
+            self.selectedDeviceID = savedDeviceID
+        }
     }
     
     private lazy var playbackFormat: AVAudioFormat = resolvePlaybackFormat()
@@ -738,5 +915,9 @@ class AudioEngineManager: ObservableObject {
         
         // Round robin
         currentNodeIndex = (safeIndex + 1) % max(1, activePlayerLimit)
+    }
+
+    deinit {
+        stopObservingOutputHardwareChanges()
     }
 }
