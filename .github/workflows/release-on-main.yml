@@ -23,6 +23,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       MECHA_RELEASE_TARGET: ${{ github.sha }}
+      MECHA_RELEASE_ALLOW_EXISTING: 1
       MECHA_SKIP_DMG_STYLING: 1
     steps:
       - name: Checkout
