@@ -13,6 +13,7 @@ APP_NAME=Mecha
 BUNDLE_ID=com.hetbhavsar.Mecha
 APP_VERSION=3.0.17
 BUILD_NUMBER=18
+AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR=39
 EOF
 
 load_release_env "$ENV_FILE"
@@ -42,6 +43,11 @@ if [[ "$(appcast_feed_url_for_env "$ENV_FILE")" != "https://het-bhavsar.github.i
     exit 1
 fi
 
+if [[ "$(autoupdate_compatibility_build_floor_for_env "$ENV_FILE")" != "39" ]]; then
+    echo "Expected AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR to be available to release tooling" >&2
+    exit 1
+fi
+
 if grep -Fq "bump_patch_version" "$ROOT_DIR/build_mecha.sh"; then
     echo "build_mecha.sh should not bump versions implicitly" >&2
     exit 1
@@ -62,13 +68,18 @@ if ! grep -Fq 'MECHA_SPARKLE_PRIVATE_KEY: ${{ secrets.MECHA_SPARKLE_PRIVATE_KEY 
     exit 1
 fi
 
-if grep -Fq 'MECHA_ALLOW_UNSIGNED_APPCAST=1' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
-    echo "release-on-main.yml must not enable unsigned appcasts for main-branch user releases" >&2
+if ! grep -Fq 'MECHA_ALLOW_UNSIGNED_APPCAST=1' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should allow unsigned appcasts when signing secrets are unavailable" >&2
     exit 1
 fi
 
-if ! grep -Fq 'Missing Developer ID signing secrets; refusing to publish a user update from main.' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
-    echo "release-on-main.yml should fail fast when Developer ID signing secrets are missing" >&2
+if grep -Fq 'Missing Developer ID signing secrets; refusing to publish a user update from main.' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should not hard-fail when signing secrets are unavailable" >&2
+    exit 1
+fi
+
+if ! grep -Fq 'Prepare internal release metadata' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should prepare internal release metadata for ad-hoc CI releases" >&2
     exit 1
 fi
 

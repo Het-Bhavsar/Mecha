@@ -20,7 +20,7 @@ APPCAST_BIN="$(sparkle_generate_appcast_bin "$ROOT_DIR")"
 DOWNLOAD_PREFIX="$(github_release_asset_url_for_env "$ENV_FILE" zip)"
 DOWNLOAD_PREFIX="${DOWNLOAD_PREFIX%/$ZIP_NAME}/"
 RELEASE_URL="$(github_release_url_for_env "$ENV_FILE")"
-REPOSITORY_URL="$(github_repository_url_for_env "$ENV_FILE")"
+COMPATIBILITY_BUILD_FLOOR="$(autoupdate_compatibility_build_floor_for_env "$ENV_FILE")"
 
 if ! update_site_generation_ready; then
     echo "[*] Skipping appcast generation; Sparkle update feeds require distribution signing unless explicitly overridden."
@@ -51,7 +51,7 @@ echo "[*] Generating appcast..."
 APPCAST_ARGS=(
     --account "$(sparkle_key_account)"
     --download-url-prefix "$DOWNLOAD_PREFIX"
-    --link "$REPOSITORY_URL"
+    --link "$RELEASE_URL"
     --full-release-notes-url "$RELEASE_URL"
     --maximum-deltas 0
     --maximum-versions 6
@@ -63,6 +63,46 @@ if [[ -n "${MECHA_SPARKLE_PRIVATE_KEY:-}" ]]; then
     printf '%s' "$MECHA_SPARKLE_PRIVATE_KEY" | "$APPCAST_BIN" --ed-key-file - "${APPCAST_ARGS[@]}"
 else
     "$APPCAST_BIN" "${APPCAST_ARGS[@]}"
+fi
+
+if [[ -n "$COMPATIBILITY_BUILD_FLOOR" ]]; then
+    python3 - "$ARCHIVE_DIR/appcast.xml" "$COMPATIBILITY_BUILD_FLOOR" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+appcast_path, compatibility_floor = sys.argv[1], sys.argv[2]
+sparkle_namespace = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+ET.register_namespace("sparkle", sparkle_namespace)
+
+tree = ET.parse(appcast_path)
+root = tree.getroot()
+channel = root.find("channel")
+if channel is None:
+    raise SystemExit("Appcast is missing channel element")
+
+item = channel.find("item")
+if item is None:
+    raise SystemExit("Appcast is missing update item")
+
+informational_tag = f"{{{sparkle_namespace}}}informationalUpdate"
+below_version_tag = f"{{{sparkle_namespace}}}belowVersion"
+existing_informational_update = item.find(informational_tag)
+if existing_informational_update is not None:
+    item.remove(existing_informational_update)
+
+informational_update = ET.Element(informational_tag)
+below_version = ET.SubElement(informational_update, below_version_tag)
+below_version.text = compatibility_floor
+
+enclosure = item.find("enclosure")
+if enclosure is None:
+    item.append(informational_update)
+else:
+    item.insert(list(item).index(enclosure), informational_update)
+
+ET.indent(tree, space="    ")
+tree.write(appcast_path, encoding="utf-8", xml_declaration=True)
+PY
 fi
 
 rm -f "$ARCHIVE_DIR/$ZIP_NAME"
@@ -90,7 +130,7 @@ cat > "$SITE_DIR/index.html" <<EOF
 </head>
 <body>
   <h1>Mecha Update Feed</h1>
-  <p>This endpoint powers internal-evaluation updates for Mecha.</p>
+  <p>This endpoint powers Mecha's Sparkle updates and release downloads.</p>
   <p>Feed URL: <a href="appcast.xml"><code>appcast.xml</code></a></p>
   <p>Latest release: <a href="$RELEASE_URL">$RELEASE_URL</a></p>
 </body>

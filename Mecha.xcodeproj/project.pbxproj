@@ -241,7 +241,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Mecha requires accessibility permissions to detect keypresses system-wide.";
@@ -250,7 +250,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.37;
+				MARKETING_VERSION = 3.0.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Mecha;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.9;
@@ -264,7 +264,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Mecha requires accessibility permissions to detect keypresses system-wide.";
@@ -273,7 +273,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.0.37;
+				MARKETING_VERSION = 3.0.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Mecha;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.9;

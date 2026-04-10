@@ -53,6 +53,7 @@ jobs:
           if signing_secrets_ready; then
             echo "signing_configured=true" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=developer_id" >> "$GITHUB_ENV"
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=0" >> "$GITHUB_ENV"
             {
               echo "MECHA_SIGN_IDENTITY<<EOF"
               echo "$MECHA_SIGN_IDENTITY"
@@ -60,8 +61,12 @@ jobs:
             } >> "$GITHUB_ENV"
             echo "[*] Developer ID signing enabled for this release."
           else
-            echo "Missing Developer ID signing secrets; refusing to publish a user update from main." >&2
-            exit 1
+            echo "signing_configured=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SIGN_MODE=adhoc" >> "$GITHUB_ENV"
+            echo "MECHA_SIGN_IDENTITY=" >> "$GITHUB_ENV"
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=1" >> "$GITHUB_ENV"
+            echo "[*] Developer ID signing secrets are unavailable; publishing an ad-hoc release track."
+            echo "[*] Builds below AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR will receive a manual release download prompt."
           fi
 
           if notarization_secrets_ready; then
@@ -69,8 +74,9 @@ jobs:
             echo "MECHA_NOTARY_PROFILE=mecha-notary" >> "$GITHUB_ENV"
             echo "[*] Apple notarization enabled for this release."
           else
-            echo "Missing Apple notarization secrets; refusing to publish a user update from main." >&2
-            exit 1
+            echo "notarization_configured=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_NOTARY_PROFILE=" >> "$GITHUB_ENV"
+            echo "[*] Apple notarization secrets are unavailable; continuing without notarization."
           fi
 
           if update_site_generation_ready; then
@@ -78,14 +84,23 @@ jobs:
             echo "MECHA_SKIP_UPDATE_SITE=0" >> "$GITHUB_ENV"
             echo "[*] Sparkle update feed generation enabled for this release."
           else
-            echo "Sparkle update feed generation is not ready; refusing to publish a user update from main." >&2
-            exit 1
+            echo "update_site_enabled=false" >> "$GITHUB_OUTPUT"
+            echo "MECHA_SKIP_UPDATE_SITE=1" >> "$GITHUB_ENV"
+            echo "[*] Sparkle update feed generation disabled for this release configuration."
           fi
+
+      - name: Prepare internal release metadata
+        if: steps.release_capabilities.outputs.signing_configured != 'true'
+        env:
+          MECHA_INTERNAL_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          bash ./scripts/prepare_internal_release_version.sh
 
       - name: Import signing certificate
         env:
           MECHA_SIGN_CERT_P12_BASE64: ${{ secrets.MECHA_SIGN_CERT_P12_BASE64 }}
           MECHA_SIGN_CERT_PASSWORD: ${{ secrets.MECHA_SIGN_CERT_PASSWORD }}
+        if: steps.release_capabilities.outputs.signing_configured == 'true'
         run: |
           if [[ -z "${MECHA_SIGN_CERT_P12_BASE64:-}" || -z "${MECHA_SIGN_CERT_PASSWORD:-}" || -z "${MECHA_SIGN_IDENTITY:-}" ]]; then
             echo "Missing signing certificate secrets" >&2
@@ -117,6 +132,7 @@ jobs:
           MECHA_NOTARY_APPLE_ID: ${{ secrets.MECHA_NOTARY_APPLE_ID }}
           MECHA_NOTARY_TEAM_ID: ${{ secrets.MECHA_NOTARY_TEAM_ID }}
           MECHA_NOTARY_APP_PASSWORD: ${{ secrets.MECHA_NOTARY_APP_PASSWORD }}
+        if: steps.release_capabilities.outputs.notarization_configured == 'true'
         run: |
           if [[ -z "${MECHA_NOTARY_APPLE_ID:-}" || -z "${MECHA_NOTARY_TEAM_ID:-}" || -z "${MECHA_NOTARY_APP_PASSWORD:-}" ]]; then
             echo "Missing notarization secrets" >&2
@@ -135,13 +151,16 @@ jobs:
           bash ./release_mecha.sh
 
       - name: Configure Pages
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/appcast-site
 
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/deploy-pages@v4

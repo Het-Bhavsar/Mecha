@@ -72,6 +72,25 @@ appcast_feed_url_for_env() {
     printf '%s/appcast.xml\n' "$base_url"
 }
 
+autoupdate_compatibility_build_floor_for_env() {
+    local env_file="$1"
+    local build_floor
+
+    load_release_env "$env_file"
+    build_floor="${AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR:-}"
+
+    if [[ -z "$build_floor" ]]; then
+        return 0
+    fi
+
+    if [[ ! "$build_floor" =~ ^[0-9]+$ ]] || (( build_floor <= 0 )); then
+        echo "Invalid AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR: $build_floor" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$build_floor"
+}
+
 github_release_asset_url_for_env() {
     local env_file="$1"
     local asset_kind="$2"
