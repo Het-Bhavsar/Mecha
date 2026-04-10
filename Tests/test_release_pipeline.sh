@@ -73,6 +73,11 @@ if ! grep -Fq 'MECHA_ALLOW_UNSIGNED_APPCAST=1' "$ROOT_DIR/.github/workflows/rele
     exit 1
 fi
 
+if ! grep -Fq 'echo "MECHA_ALLOW_UNSIGNED_APPCAST=$MECHA_ALLOW_UNSIGNED_APPCAST" >> "$GITHUB_ENV"' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should persist the unsigned appcast mode selected in the current shell" >&2
+    exit 1
+fi
+
 if grep -Fq 'Missing Developer ID signing secrets; refusing to publish a user update from main.' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
     echo "release-on-main.yml should not hard-fail when signing secrets are unavailable" >&2
     exit 1

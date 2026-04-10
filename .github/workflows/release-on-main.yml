@@ -51,9 +51,10 @@ jobs:
           source ./scripts/release_common.sh
 
           if signing_secrets_ready; then
+            MECHA_ALLOW_UNSIGNED_APPCAST=0
             echo "signing_configured=true" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=developer_id" >> "$GITHUB_ENV"
-            echo "MECHA_ALLOW_UNSIGNED_APPCAST=0" >> "$GITHUB_ENV"
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=$MECHA_ALLOW_UNSIGNED_APPCAST" >> "$GITHUB_ENV"
             {
               echo "MECHA_SIGN_IDENTITY<<EOF"
               echo "$MECHA_SIGN_IDENTITY"
@@ -61,10 +62,11 @@ jobs:
             } >> "$GITHUB_ENV"
             echo "[*] Developer ID signing enabled for this release."
           else
+            MECHA_ALLOW_UNSIGNED_APPCAST=1
             echo "signing_configured=false" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=adhoc" >> "$GITHUB_ENV"
             echo "MECHA_SIGN_IDENTITY=" >> "$GITHUB_ENV"
-            echo "MECHA_ALLOW_UNSIGNED_APPCAST=1" >> "$GITHUB_ENV"
+            echo "MECHA_ALLOW_UNSIGNED_APPCAST=$MECHA_ALLOW_UNSIGNED_APPCAST" >> "$GITHUB_ENV"
             echo "[*] Developer ID signing secrets are unavailable; publishing an ad-hoc release track."
             echo "[*] Builds below AUTOUPDATE_COMPATIBILITY_BUILD_FLOOR will receive a manual release download prompt."
           fi
