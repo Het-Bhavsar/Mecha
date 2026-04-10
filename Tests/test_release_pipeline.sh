@@ -62,6 +62,16 @@ if ! grep -Fq 'MECHA_SPARKLE_PRIVATE_KEY: ${{ secrets.MECHA_SPARKLE_PRIVATE_KEY 
     exit 1
 fi
 
+if grep -Fq 'MECHA_ALLOW_UNSIGNED_APPCAST=1' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml must not enable unsigned appcasts for main-branch user releases" >&2
+    exit 1
+fi
+
+if ! grep -Fq 'Missing Developer ID signing secrets; refusing to publish a user update from main.' "$ROOT_DIR/.github/workflows/release-on-main.yml"; then
+    echo "release-on-main.yml should fail fast when Developer ID signing secrets are missing" >&2
+    exit 1
+fi
+
 if ! grep -Fq -- '--ed-key-file -' "$ROOT_DIR/scripts/generate_update_site.sh"; then
     echo "generate_update_site.sh should support Sparkle private keys supplied from CI secrets" >&2
     exit 1

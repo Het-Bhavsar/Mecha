@@ -51,10 +51,8 @@ jobs:
           source ./scripts/release_common.sh
 
           if signing_secrets_ready; then
-            MECHA_ALLOW_UNSIGNED_APPCAST=0
             echo "signing_configured=true" >> "$GITHUB_OUTPUT"
             echo "MECHA_SIGN_MODE=developer_id" >> "$GITHUB_ENV"
-            echo "MECHA_ALLOW_UNSIGNED_APPCAST=0" >> "$GITHUB_ENV"
             {
               echo "MECHA_SIGN_IDENTITY<<EOF"
               echo "$MECHA_SIGN_IDENTITY"
@@ -62,12 +60,8 @@ jobs:
             } >> "$GITHUB_ENV"
             echo "[*] Developer ID signing enabled for this release."
           else
-            MECHA_ALLOW_UNSIGNED_APPCAST=1
-            echo "signing_configured=false" >> "$GITHUB_OUTPUT"
-            echo "MECHA_SIGN_MODE=adhoc" >> "$GITHUB_ENV"
-            echo "MECHA_SIGN_IDENTITY=" >> "$GITHUB_ENV"
-            echo "MECHA_ALLOW_UNSIGNED_APPCAST=1" >> "$GITHUB_ENV"
-            echo "[*] Signing secrets are not configured; publishing internal-evaluation assets with ad-hoc signing and an unsigned internal appcast."
+            echo "Missing Developer ID signing secrets; refusing to publish a user update from main." >&2
+            exit 1
           fi
 
           if notarization_secrets_ready; then
@@ -75,9 +69,8 @@ jobs:
             echo "MECHA_NOTARY_PROFILE=mecha-notary" >> "$GITHUB_ENV"
             echo "[*] Apple notarization enabled for this release."
           else
-            echo "notarization_configured=false" >> "$GITHUB_OUTPUT"
-            echo "MECHA_NOTARY_PROFILE=" >> "$GITHUB_ENV"
-            echo "[*] Apple notarization secrets are not configured; skipping notarization for internal usage."
+            echo "Missing Apple notarization secrets; refusing to publish a user update from main." >&2
+            exit 1
           fi
 
           if update_site_generation_ready; then
@@ -85,20 +78,11 @@ jobs:
             echo "MECHA_SKIP_UPDATE_SITE=0" >> "$GITHUB_ENV"
             echo "[*] Sparkle update feed generation enabled for this release."
           else
-            echo "update_site_enabled=false" >> "$GITHUB_OUTPUT"
-            echo "MECHA_SKIP_UPDATE_SITE=1" >> "$GITHUB_ENV"
-            echo "[*] Sparkle update feed generation disabled for this release configuration."
+            echo "Sparkle update feed generation is not ready; refusing to publish a user update from main." >&2
+            exit 1
           fi
 
-      - name: Prepare internal release metadata
-        if: steps.release_capabilities.outputs.signing_configured != 'true'
-        env:
-          MECHA_INTERNAL_BUILD_NUMBER: ${{ github.run_number }}
-        run: |
-          bash ./scripts/prepare_internal_release_version.sh
-
       - name: Import signing certificate
-        if: steps.release_capabilities.outputs.signing_configured == 'true'
         env:
           MECHA_SIGN_CERT_P12_BASE64: ${{ secrets.MECHA_SIGN_CERT_P12_BASE64 }}
           MECHA_SIGN_CERT_PASSWORD: ${{ secrets.MECHA_SIGN_CERT_PASSWORD }}
@@ -129,7 +113,6 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
       - name: Configure notarytool profile
-        if: steps.release_capabilities.outputs.notarization_configured == 'true'
         env:
           MECHA_NOTARY_APPLE_ID: ${{ secrets.MECHA_NOTARY_APPLE_ID }}
           MECHA_NOTARY_TEAM_ID: ${{ secrets.MECHA_NOTARY_TEAM_ID }}
@@ -152,16 +135,13 @@ jobs:
           bash ./release_mecha.sh
 
       - name: Configure Pages
-        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/appcast-site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        if: steps.release_capabilities.outputs.update_site_enabled == 'true'
         uses: actions/deploy-pages@v4
