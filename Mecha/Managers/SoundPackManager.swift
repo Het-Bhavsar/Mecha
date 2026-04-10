@@ -838,9 +838,9 @@ class SoundPackManager: ObservableObject {
 
     static func resolvedKeyUpSample(
         nativeRelease: SelectedSoundSample?,
-        fallbackPress: SelectedSoundSample?
+        fallbackPress _: SelectedSoundSample?
     ) -> SelectedSoundSample? {
-        nativeRelease ?? fallbackPress
+        nativeRelease
     }
 
     /// Returns all sound URLs for the current pack (for pre-buffering)

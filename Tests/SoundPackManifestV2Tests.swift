@@ -138,7 +138,7 @@ struct SoundPackManifestV2Tests {
         let nativeReleaseURL = URL(fileURLWithPath: "/tmp/up.wav")
         let rememberedDownstroke = SelectedSoundSample(sampleGroup: "alphanumeric", playbackGroup: "alphanumeric_left", url: fallbackReleaseURL)
         let nativeRelease = SelectedSoundSample(sampleGroup: "alphanumeric", playbackGroup: "alphanumeric_left", url: nativeReleaseURL)
-        expect(SoundPackManager.resolvedKeyUpSample(nativeRelease: nil, fallbackPress: rememberedDownstroke)?.url == fallbackReleaseURL, "missing native release samples should fall back to the remembered downstroke sample")
+        expect(SoundPackManager.resolvedKeyUpSample(nativeRelease: nil, fallbackPress: rememberedDownstroke) == nil, "packs without release samples should stay silent on key-up instead of replaying the downstroke")
         expect(SoundPackManager.resolvedKeyUpSample(nativeRelease: nativeRelease, fallbackPress: rememberedDownstroke)?.url == nativeReleaseURL, "native release samples should win over fallback downstrokes")
     }
 }

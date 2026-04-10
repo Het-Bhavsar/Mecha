@@ -10,7 +10,6 @@ class AppController: ObservableObject {
     private let statsManager: StatsManager
     
     private var cancellables = Set<AnyCancellable>()
-    private var activePressSamples: [Int64: SelectedSoundSample] = [:]
     
     init(eventManager: EventTapManager, 
          audioManager: AudioEngineManager, 
@@ -41,9 +40,6 @@ class AppController: ObservableObject {
             }
             
             if let sample = self.soundPackManager.getRandomDownSound(for: keyType) {
-                if !isRepeat {
-                    self.activePressSamples[keyCode] = sample
-                }
                 self.audioManager.playSound(
                     url: sample.url,
                     keyGroup: sample.playbackGroup,
@@ -54,21 +50,19 @@ class AppController: ObservableObject {
             }
         }
         
-        eventManager.onKeyUp = { [weak self] keyCode, keyType in
+        eventManager.onKeyUp = { [weak self] _, keyType in
             guard let self = self else { return }
 
-            let rememberedPress = self.activePressSamples.removeValue(forKey: keyCode)
-            let nativeRelease = self.soundPackManager.getUpSound(for: keyType)
             if let sample = SoundPackManager.resolvedKeyUpSample(
-                nativeRelease: nativeRelease,
-                fallbackPress: rememberedPress
+                nativeRelease: self.soundPackManager.getUpSound(for: keyType),
+                fallbackPress: nil
             ) {
                 self.audioManager.playSound(
                     url: sample.url,
                     keyGroup: sample.playbackGroup,
                     isRepeat: false,
                     isKeyUp: true,
-                    isFallbackRelease: nativeRelease == nil
+                    isFallbackRelease: false
                 )
             }
         }
@@ -107,7 +101,6 @@ class AppController: ObservableObject {
     }
     
     private func refreshPackBuffers() {
-        activePressSamples.removeAll()
         let urls = soundPackManager.allSoundURLs()
         audioManager.prebufferPack(urls: urls)
         print("[AppController] Re-buffered sounds for: \(soundPackManager.activePackName)")
